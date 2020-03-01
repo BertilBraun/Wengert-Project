@@ -61,6 +61,8 @@ void loop() {
   CameraUpdate(imageData);
 
   if (ConnectModem()) {
+
+    delay(10000);
     
     int TTW = UploadSensorData(http);
     UploadCameraData(http, imageData);
