@@ -123,16 +123,12 @@ void GetImageData(std::vector<byte>& imageData) {
 
 void CameraUpdate(std::vector<byte>& imageData) {
 
-  digitalWrite(CameraPowerPin, HIGH);
-  
   SPI.begin();
 
   InitCam();
   GetImageData(imageData);
 
   SPI.end();
-
-  digitalWrite(CameraPowerPin, LOW);
 
   if (imageData.size() >= MAX_FIFO_SIZE)
     Serial.println("Oversized Image.");

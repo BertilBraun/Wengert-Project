@@ -72,5 +72,6 @@ void loop() {
     else
       Pump(CLOSE_PUMP_PIN);
   }
+
   esp_deep_sleep_start();
 }

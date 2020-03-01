@@ -14,19 +14,16 @@ String apiKeyValue = "tPmAT5Ab3j7F9";
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BME280.h>
 
-TwoWire I2CBME(0);
 Adafruit_BME280 bme;
 
 void InitBME() {
-	
-	SerialMon.print("Connecting to BME280 sensor");
-	I2CBME.begin(I2C_SDA_BME, I2C_SCL_BME);
 
-	if (!bme.begin(0x76, &I2CBME)) {
-		SerialMon.print(" FAIL, check wiring!");
-		while (!bme.begin(0x76, &I2CBME));
-	}
-	Serial.println(" OK");
+  SerialMon.print("BME280 sensor");
+  if (!bme.begin(0x76)) {
+    SerialMon.print(" FAIL, check wiring!");
+    while (!bme.begin(0x76));
+  }
+  Serial.println(" OK");
 }
 
 int getTTW(HttpClient& http) {
@@ -54,10 +51,10 @@ String getBMEData(int TTW) {
 }
 
 int UploadSensorData(HttpClient& http) {
-  
+
   int TTW = getTTW(http);
   String httpSensorData = getBMEData(TTW);
-  
+
   SerialMon.println("Performing HTTP POST Sensor Data request...");
   SerialMon.println(httpSensorData);
   if (!http.post("/post-data.php", "application/x-www-form-urlencoded", httpSensorData))
