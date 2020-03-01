@@ -69,8 +69,6 @@ void loop() {
 
     if (TTW > 0)
       Pump(OPEN_PUMP_PIN);
-    else
-      Pump(CLOSE_PUMP_PIN);
   }
 
   esp_deep_sleep_start();

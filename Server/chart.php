@@ -112,6 +112,7 @@ $conn->close();
 		</div>
 		<div id="image-container">
 			<h3 id="image-title"> Wengert Image </h3>
+			<select id="mySelect" > </select>
 			<img id="image" alt="Wengert Image">
 		</div>
 	<script>
@@ -263,6 +264,21 @@ $conn->close();
 	}
 	
 	document.getElementById("image").src = "/<?php echo $image_path; ?>";
+	
+	var files = <?php echo json_encode(array_reverse(scandir("Images/"))); ?>;
+	
+	var mySelect = document.getElementById("mySelect");
+	for (const f of files) {
+		if (!f.endsWith(".jpg")) continue;
+		
+		var option = document.createElement("option");
+		option.text = f;
+		mySelect.add(option);
+	}
+
+	mySelect.onchange = function() {
+		document.getElementById("image").src = "Images/" + mySelect.value;
+	}
 	
 	</script>
 </body>
