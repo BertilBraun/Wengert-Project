@@ -36,6 +36,7 @@ String url_encode(const std::vector<byte> &value) {
 
 void InitCam() {
 
+  pinMode(CameraPowerPin, OUTPUT);
   pinMode(CS, OUTPUT);
   digitalWrite(CS, HIGH);
 
@@ -123,12 +124,16 @@ void GetImageData(std::vector<byte>& imageData) {
 
 void CameraUpdate(std::vector<byte>& imageData) {
 
+  digitalWrite(CameraPowerPin, HIGH);
+  
   SPI.begin();
 
   InitCam();
   GetImageData(imageData);
 
   SPI.end();
+  
+  digitalWrite(CameraPowerPin, LOW);
 
   if (imageData.size() >= MAX_FIFO_SIZE)
     Serial.println("Oversized Image.");
