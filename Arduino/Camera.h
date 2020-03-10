@@ -144,7 +144,7 @@ void CameraUpdate(std::vector<byte>& imageData) {
 void UploadCameraData(HttpClient& http, const std::vector<byte>& imageData) {
 
   SerialMon.println("Performing HTTP GET Time request");
-  if (!http.get("get-Time.php")) {
+  if (!http.get("/get-Time.php")) {
     if (http.responseBody() == "0")
       return;
   }

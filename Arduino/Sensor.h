@@ -31,7 +31,7 @@ void InitSensor() {
 int getTTW(HttpClient& http) {
   SerialMon.println("Performing HTTP GET Time to Water request...");
   int response = 0;
-  if (!http.get("get-data.php"))
+  if (!http.get("/get-data.php"))
     response = http.responseBody().toInt();
   else
     SerialMon.println("Error on HTTP GET request");
