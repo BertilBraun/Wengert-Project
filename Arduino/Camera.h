@@ -151,6 +151,10 @@ void UploadCameraData(HttpClient& http, const std::vector<byte>& imageData) {
     SerialMon.println("Error on HTTP GET request");
   http.stop();
 
+  SerialMon.print("It is now ");
+  SerialMon.print(response);
+  SerialMon.println(" O'Clock");
+
   if (response < 7 || response > 21)
     return;
 
