@@ -7,7 +7,7 @@
 #define SerialMon Serial
 #define SerialAT Serial1
 
-#define TIME_TO_SLEEP 1000000 * 1200        /* Time ESP32 will go to sleep (in seconds) Conversion factor for micro seconds to seconds 1000000 * 1200 seconds = 20 Min */
+#define TIME_TO_SLEEP 1000000 * 3600        /* Time ESP32 will go to sleep (in seconds) Conversion factor for micro seconds to seconds 1000000 * 3600 seconds = 1 Hour */
 
 #include <Wire.h>
 #include <ArduinoHttpClient.h>
