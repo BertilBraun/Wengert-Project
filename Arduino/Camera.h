@@ -125,14 +125,14 @@ void GetImageData(std::vector<byte>& imageData) {
 void CameraUpdate(std::vector<byte>& imageData) {
 
   digitalWrite(CameraPowerPin, HIGH);
-  
+
   SPI.begin();
 
   InitCam();
   GetImageData(imageData);
 
   SPI.end();
-  
+
   digitalWrite(CameraPowerPin, LOW);
 
   if (imageData.size() >= MAX_FIFO_SIZE)
@@ -144,19 +144,13 @@ void CameraUpdate(std::vector<byte>& imageData) {
 void UploadCameraData(HttpClient& http, const std::vector<byte>& imageData) {
 
   SerialMon.println("Performing HTTP GET Time request");
-  int response = 0;
-  if (!http.get("get-Time.php"))
-    response = http.responseBody().toInt();
+  if (!http.get("get-Time.php")) {
+    if (http.responseBody() == "0")
+      return;
+  }
   else
     SerialMon.println("Error on HTTP GET request");
   http.stop();
-
-  SerialMon.print("It is now ");
-  SerialMon.print(response);
-  SerialMon.println(" O'Clock");
-
-  if (response < 7 || response > 21)
-    return;
 
   size_t copySize = 512;
 

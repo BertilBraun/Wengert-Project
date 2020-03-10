@@ -7,7 +7,7 @@
 #define SerialMon Serial
 #define SerialAT Serial1
 
-#define TIME_TO_SLEEP 1000000 * 3600        /* Time ESP32 will go to sleep (in seconds) Conversion factor for micro seconds to seconds 1000000 * 3600 seconds = 1 Hour */
+#define TIME_TO_SLEEP 1000000 * 1800        /* Time ESP32 will go to sleep (in seconds) Conversion factor for micro seconds to seconds 1000000 * 1800 seconds = 30 Minutes */
 
 #include <Wire.h>
 #include <ArduinoHttpClient.h>
@@ -43,35 +43,37 @@ void setup() {
   SerialMon.begin(115200);
   Wire.begin();
 
-  pinMode(A0, INPUT);
-
   SerialMon.println(String("IP5306 KeepOn ") + (setPowerBoostKeepOn(1) ? "OK" : "FAIL!"));
 
   InitModem();
-  InitBME();
-
-  Pump(CLOSE_PUMP_PIN);
-
-  esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP);
-}
-
-void loop() {
+  InitSensor();
 
   std::vector<byte> imageData;
   CameraUpdate(imageData);
 
   if (ConnectModem()) {
 
-    delay(10000);
-    
-    int TTW = UploadSensorData(http);
-    UploadCameraData(http, imageData);
+    SerialMon.print("Getting if half an hour has passed: ");
+    http.get("/get-Half-Hour.php");
+    String response = http.responseBody();
+    http.stop();
+    SerialMon.println(response == "0" ? "Not" : "Has");
 
-    DisconnectModem();
+    if (response != "0") {
 
-    if (TTW > 0)
-      Pump(OPEN_PUMP_PIN);
+      int TTW = UploadSensorData(http);
+      UploadCameraData(http, imageData);
+
+      DisconnectModem();
+
+      if (TTW > 0)
+        Pump(OPEN_PUMP_PIN);
+      else
+        Pump(CLOSE_PUMP_PIN);
+    }
   }
 
-  esp_deep_sleep_start();
+  esp_deep_sleep(TIME_TO_SLEEP);
 }
+
+void loop() { }

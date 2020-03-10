@@ -16,7 +16,9 @@ String apiKeyValue = "tPmAT5Ab3j7F9";
 
 Adafruit_BME280 bme;
 
-void InitBME() {
+void InitSensor() {
+  
+  pinMode(A0, INPUT);
 
   SerialMon.print("BME280 sensor");
   if (!bme.begin(0x76)) {
@@ -45,7 +47,7 @@ String getBMEData(int TTW) {
                "&ground_humidity="    + String(analogRead(A0) / 10.24F) +
                "&temperature="        + String(bme.readTemperature()) +
                "&pressure="           + String(bme.readPressure() / 100.0F) +
-               "&timeToWater="        + String(max(TTW - 20, 0));
+               "&timeToWater="        + String(max(TTW - 60, 0));
 
   return ret;
 }
