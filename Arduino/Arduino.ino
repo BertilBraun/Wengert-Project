@@ -9,6 +9,8 @@
 
 #define TIME_TO_SLEEP 1000000 * 1800        /* Time ESP32 will go to sleep (in seconds) Conversion factor for micro seconds to seconds 1000000 * 1800 seconds = 30 Minutes */
 
+#define LOGGING  // TODO
+
 #include <Wire.h>
 #include <ArduinoHttpClient.h>
 
@@ -32,16 +34,40 @@ void Pump(int pin) {
   digitalWrite(pin, HIGH);
   delay(100);
   digitalWrite(pin, LOW);
-  // TODOLATER delay(20000);
+  // TODO LATER delay(20000);
   digitalWrite(UNHOOK_PUMP_PIN, HIGH);
   delay(100);
   digitalWrite(UNHOOK_PUMP_PIN, LOW);
+}
+
+bool HalfHourPassed(HttpClient& http) {
+
+  SerialMon.print("Getting if half an hour has passed: ");
+  SerialMon.print(http.get("/get-Half-Hour.php"));
+  // TODO http.get("/get-Half-Hour.php");
+  String response = http.responseBody();
+  http.stop();
+
+  if (response != "0" && response != "1") {
+    SerialMon.print("Error on Get Request: ");
+    SerialMon.println(http.responseStatusCode());
+    return false;
+  }
+  else if (response == "1") {
+    SerialMon.println("Has");
+    return true;
+  }
+  else {
+    SerialMon.println("Not");
+    return false;
+  }
 }
 
 void setup() {
 
   SerialMon.begin(115200);
   Wire.begin();
+  http.connectionKeepAlive();
 
   SerialMon.println(String("IP5306 KeepOn ") + (setPowerBoostKeepOn(1) ? "OK" : "FAIL!"));
 
@@ -51,26 +77,14 @@ void setup() {
   std::vector<byte> imageData;
   CameraUpdate(imageData);
 
-  if (ConnectModem()) {
+  if (ConnectModem() && HalfHourPassed(http)) {
 
-    SerialMon.print("Getting if half an hour has passed: ");
-    http.get("/get-Half-Hour.php");
-    String response = http.responseBody();
-    http.stop();
-    SerialMon.println(response == "0" ? "Not" : "Has");
+    int TTW = UploadSensorData(http);
+    UploadCameraData(http, imageData);
 
-    if (response != "0") {
+    DisconnectModem();
 
-      int TTW = UploadSensorData(http);
-      UploadCameraData(http, imageData);
-
-      DisconnectModem();
-
-      if (TTW > 0)
-        Pump(OPEN_PUMP_PIN);
-      else
-        Pump(CLOSE_PUMP_PIN);
-    }
+    Pump(TTW > 0 ? OPEN_PUMP_PIN : CLOSE_PUMP_PIN);
   }
 
   esp_deep_sleep(TIME_TO_SLEEP);

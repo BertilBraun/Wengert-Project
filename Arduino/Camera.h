@@ -148,8 +148,12 @@ void UploadCameraData(HttpClient& http, const std::vector<byte>& imageData) {
     if (http.responseBody() == "0")
       return;
   }
-  else
-    SerialMon.println("Error on HTTP GET request");
+  else {
+    http.stop();
+    SerialMon.println("Error on request");
+    SerialMon.println(http.responseStatusCode());
+    SerialMon.println(http.responseBody());
+  }
   http.stop();
 
   size_t copySize = 512;
@@ -163,8 +167,12 @@ void UploadCameraData(HttpClient& http, const std::vector<byte>& imageData) {
 
   if (! http.post("/delete-image.php", "application/x-www-form-urlencoded", ""))
     SerialMon.println(http.responseBody());
-  else
-    SerialMon.println("Error on delete Image Data request");
+  else {
+    http.stop();
+    SerialMon.println("Error on request");
+    SerialMon.println(http.responseStatusCode());
+    SerialMon.println(http.responseBody());
+  }
   http.stop();
 
   for (int i = 0; i < imageData.size(); i += copySize) {
@@ -174,8 +182,12 @@ void UploadCameraData(HttpClient& http, const std::vector<byte>& imageData) {
 
     if (! http.post("/post-image.php", "application/x-www-form-urlencoded", "data=" + url_encode(data)))
       SerialMon.println(http.responseBody());
-    else
-      SerialMon.println("Error on HTTP POST Image Data request");
+    else {
+      http.stop();
+      SerialMon.println("Error on request");
+      SerialMon.println(http.responseStatusCode());
+      SerialMon.println(http.responseBody());
+    }
     http.stop();
   }
 }

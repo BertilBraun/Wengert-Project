@@ -17,7 +17,7 @@ String apiKeyValue = "tPmAT5Ab3j7F9";
 Adafruit_BME280 bme;
 
 void InitSensor() {
-  
+
   pinMode(A0, INPUT);
 
   SerialMon.print("BME280 sensor");
@@ -33,9 +33,13 @@ int getTTW(HttpClient& http) {
   int response = 0;
   if (!http.get("/get-data.php"))
     response = http.responseBody().toInt();
-  else
-    SerialMon.println("Error on HTTP GET request");
-
+  else {
+    http.stop();
+    SerialMon.println("Error on request");
+    SerialMon.println(http.responseStatusCode());
+    SerialMon.println(http.responseBody());
+  }
+  
   http.stop();
   return response;
 }
@@ -61,8 +65,12 @@ int UploadSensorData(HttpClient& http) {
   SerialMon.println(httpSensorData);
   if (!http.post("/post-data.php", "application/x-www-form-urlencoded", httpSensorData))
     SerialMon.println(http.responseBody());
-  else
-    SerialMon.println("Error on HTTP POST Sensor Data request");
+  else {
+    http.stop();
+    SerialMon.println("Error on request");
+    SerialMon.println(http.responseStatusCode());
+    SerialMon.println(http.responseBody());
+  }
   http.stop();
 
   return TTW;
