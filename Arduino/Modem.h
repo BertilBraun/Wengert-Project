@@ -33,6 +33,7 @@ void InitModem() {
 }
 
 bool ConnectModem() {
+  InitModem();
 
 	digitalWrite(MODEM_PWKEY, LOW);
 	digitalWrite(MODEM_RST, HIGH);

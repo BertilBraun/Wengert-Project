@@ -80,7 +80,7 @@ void InitCam() {
   myCAM.write_reg(ARDUCHIP_FRAMES, 0x00);
 }
 
-void GetImageData(std::vector<byte>& imageData) {
+std::vector<byte> GetImageData() {
 
   myCAM.flush_fifo();
   myCAM.clear_fifo_flag();
@@ -100,8 +100,8 @@ void GetImageData(std::vector<byte>& imageData) {
   unsigned char temp = 0, temp_last = 0;
   bool is_header = false;
 
+  std::vector<byte> imageData;
   imageData.reserve(len);
-
   while ( len-- )
   {
     temp_last = temp;
@@ -120,16 +120,18 @@ void GetImageData(std::vector<byte>& imageData) {
       imageData.push_back(temp);
     }
   }
+
+  return imageData;
 }
 
-void CameraUpdate(std::vector<byte>& imageData) {
+std::vector<byte> CameraUpdate() {
 
   digitalWrite(CameraPowerPin, HIGH);
 
   SPI.begin();
 
   InitCam();
-  GetImageData(imageData);
+  std::vector<byte> imageData = GetImageData();
 
   SPI.end();
 
@@ -139,22 +141,11 @@ void CameraUpdate(std::vector<byte>& imageData) {
     Serial.println("Oversized Image.");
   else if (imageData.size() == 0 )
     Serial.println("Image Size is 0.");
+
+  return imageData;
 }
 
 void UploadCameraData(HttpClient& http, const std::vector<byte>& imageData) {
-
-  SerialMon.println("Performing HTTP GET Time request");
-  if (!http.get("/get-Time.php")) {
-    if (http.responseBody() == "0")
-      return;
-  }
-  else {
-    http.stop();
-    SerialMon.println("Error on request");
-    SerialMon.println(http.responseStatusCode());
-    SerialMon.println(http.responseBody());
-  }
-  http.stop();
 
   size_t copySize = 512;
 
