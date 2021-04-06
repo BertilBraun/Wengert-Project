@@ -1,14 +1,16 @@
+#pragma once
 
 #define CameraPowerPin 2
 
 #include <SPI.h>
 #include <vector>
-#include <base64.h>
+//#include <base64.h>
 #include <cctype>
 #include <iomanip>
 #include <sstream>
 
 #include "ArduCAM/ArduCAM.h"
+#include "Modem.h"
 
 const int CS = 15;
 
@@ -145,7 +147,7 @@ std::vector<byte> CameraUpdate() {
   return imageData;
 }
 
-void UploadCameraData(HttpClient& http, const std::vector<byte>& imageData) {
+void UploadCameraData(const std::vector<byte>& imageData) {
 
   size_t copySize = 512;
 
@@ -156,29 +158,14 @@ void UploadCameraData(HttpClient& http, const std::vector<byte>& imageData) {
   SerialMon.println(imageData.size());
   SerialMon.println("Performing HTTP POST Image Data request");
 
-  if (! http.post("/delete-image.php", "application/x-www-form-urlencoded", ""))
-    SerialMon.println(http.responseBody());
-  else {
-    http.stop();
-    SerialMon.println("Error on request");
-    SerialMon.println(http.responseStatusCode());
-    SerialMon.println(http.responseBody());
-  }
-  http.stop();
+  post("/delete-image.php", "");
 
   for (int i = 0; i < imageData.size(); i += copySize) {
 
     data.clear();
     data.insert(data.end(), imageData.begin() + i, imageData.begin() + i + min(imageData.size() - i, copySize));
 
-    if (! http.post("/post-image.php", "application/x-www-form-urlencoded", "data=" + url_encode(data)))
-      SerialMon.println(http.responseBody());
-    else {
-      http.stop();
-      SerialMon.println("Error on request");
-      SerialMon.println(http.responseStatusCode());
-      SerialMon.println(http.responseBody());
-    }
-    http.stop();
+    if (!post("/post-image.php", "data=" + url_encode(data)))
+      break;
   }
 }

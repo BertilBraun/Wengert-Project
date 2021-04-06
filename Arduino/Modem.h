@@ -1,3 +1,4 @@
+#pragma once
 
 const char apn[]      = "internet.eplus.de";
 const char gprsUser[] = "eplus";
@@ -17,11 +18,30 @@ const char gprsPass[] = "internet";
 #define TINY_GSM_MODEM_SIM800      // Modem is SIM800
 #define TINY_GSM_RX_BUFFER   1024  // Set RX buffer to 1Kb
 
-#include <Wire.h>
 #include <TinyGsmClient.h>
+#include <ArduinoHttpClient.h>
 
 TinyGsm modem(SerialAT);
 TinyGsmClient client(modem);
+
+bool post(const String& url, const String& data) {
+  
+  HttpClient http(client, "meinwengert.de", 80);
+  http.connectionKeepAlive();
+  // http.setHttpResponseTimeout(timeout);
+
+  if (http.post(url, "application/x-www-form-urlencoded", data) == HTTP_SUCCESS) {
+    SerialMon.println(http.responseBody());
+    //SerialMon.println(http.responseStatusCode());
+    return true;
+  }
+  else {
+    SerialMon.println("Error on request");
+    SerialMon.println(http.responseStatusCode());
+    SerialMon.println(http.responseBody());
+    return false;
+  }
+}
 
 void InitModem() {
 
@@ -46,7 +66,7 @@ bool ConnectModem() {
 		SerialMon.print(" FAIL!");
 		while (!modem.restart());
 	}
-	Serial.println(" OK");
+	SerialMon.println(" OK");
 
 	SerialMon.print(String("Connecting to APN: ") + apn);
 
