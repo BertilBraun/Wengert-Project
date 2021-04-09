@@ -88,6 +88,10 @@ $conn->close();
 			border-style: solid;
 			width: 100%;
 		}
+
+		.chart {
+			padding-top: 40px;
+		}
 	</style>
 </head>
 
@@ -109,7 +113,7 @@ $conn->close();
 
 			const elemId = title + "-container";
 
-			document.getElementById("charts-container").innerHTML += '<div id="' + elemId + '"></div>';
+			document.getElementById("charts-container").innerHTML += '<div class="chart" id="' + elemId + '"></div>';
 
 			setTimeout(() => Highcharts.chart(elemId, {
 				chart: {
@@ -130,12 +134,13 @@ $conn->close();
 				plotOptions: {
 					line: {
 						dataLabels: {
-							enabled: true
+							enabled: false
 						},
 						color: color
 					}
 				},
 				series: [{
+					name: title,
 					showInLegend: false,
 					data: dataValues
 				}]
