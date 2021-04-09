@@ -8,6 +8,9 @@ function test_input($data) {
 }
 function log_to_file($msg, $file) {
     $result = $msg . "\n";
+    if (!file_exists($file)) {
+        file_put_contents($file, "");
+    }
     file_put_contents($file, $result, FILE_APPEND);
 }
 function err($msg) {

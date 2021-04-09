@@ -107,7 +107,10 @@ $conn->close();
 	</div>
 	<script>
 		let dateutc = <?php echo $dateutc; ?>;
-		dateutc = dateutc.map((e) => new Date(e).toLocaleTimeString("de-De", { hour: '2-digit', minute: '2-digit' }))
+		dateutc = dateutc.map((e) => new Date(e).toLocaleTimeString("de-De", {
+			hour: '2-digit',
+			minute: '2-digit'
+		}))
 
 		const addChart = (dataValues, title, unit, color) => {
 
@@ -149,7 +152,7 @@ $conn->close();
 
 		const addImageSelect = () => {
 
-			const files = <?php echo json_encode(array_reverse(scandir("Images/"))); ?>;
+			const files = <?php echo json_encode(array_reverse(scandir("Images/"))); ?>.filter((e) => e.endsWith(".jpg"));
 
 			const mySelect = document.getElementById("mySelect");
 			for (const f of files) {
@@ -163,6 +166,8 @@ $conn->close();
 			mySelect.onchange = function() {
 				document.getElementById("image").src = "/Images/" + mySelect.value;
 			}
+
+			document.getElementById("image").src = "/Images/" + files[files.length - 1];
 		}
 
 		addChart(<?php echo $baromrelin; ?>, 'Baromrelin', '.', '#059e8a')
@@ -198,8 +203,6 @@ $conn->close();
 		addChart(<?php echo $uv; ?>, 'UV', '.', '#059e8a')
 
 		addImageSelect()
-		// TODO possibly via set selected
-		document.getElementById("image").src = "<?php echo $image_path; ?>";
 	</script>
 </body>
 
