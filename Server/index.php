@@ -2,284 +2,200 @@
 
 $servername = "rdbms.strato.de";
 
-$dbname = "DB3920559";
-$username = "U3920559";
-$password = "(L3mb3rg3rLand!)";
+$dbname 	= "dbs1773217";
+$username 	= "dbu1299844";
+$password 	= "(L3mb3rg3rLand!)";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-} 
+	die("Connection failed: " . $conn->connect_error);
+}
 
-$sql = "SELECT humidity, ground_humidity, temperature, pressure, timeToWater, readingTime FROM SensorData order by readingTime desc limit 40";
+$sql = "SELECT baromrelin, baromabsin, tempf, humidity, winddir, windspeedmph, windgustmph, rainratein, eventrainin, dailyrainin, weeklyrainin, monthlyrainin, yearlyrainin, totalrainin, solarradiation, uv, dateutc, id FROM `Weather Data` order by id desc limit 40";
 
 $result = $conn->query($sql);
 
 while ($data = $result->fetch_assoc())
-    $sensor_data[] = $data;
+	$sensor_data[] = $data;
 
-$value1 		= json_encode(array_reverse(array_column($sensor_data, 'humidity')), JSON_NUMERIC_CHECK);
-$value2 		= json_encode(array_reverse(array_column($sensor_data, 'ground_humidity')), JSON_NUMERIC_CHECK);
-$value3 		= json_encode(array_reverse(array_column($sensor_data, 'temperature')), JSON_NUMERIC_CHECK);
-$value4 		= json_encode(array_reverse(array_column($sensor_data, 'pressure')), JSON_NUMERIC_CHECK);
-$value5 		= json_encode(array_reverse(array_column($sensor_data, 'timeToWater')), JSON_NUMERIC_CHECK);
-$reading_time 	= json_encode(array_reverse(array_column($sensor_data, 'readingTime')), JSON_NUMERIC_CHECK);
+$image_path 	= "/Images/" . max(array_reverse(array_column($sensor_data, "id"))) . ".jpg";
 
+$dateutc		= json_encode(array_reverse(array_column($sensor_data, "dateutc")), JSON_NUMERIC_CHECK);
+$baromrelin     = json_encode(array_reverse(array_column($sensor_data, "baromrelin")), JSON_NUMERIC_CHECK);
+$baromabsin     = json_encode(array_reverse(array_column($sensor_data, "baromabsin")), JSON_NUMERIC_CHECK);
+$tempf     		= json_encode(array_reverse(array_column($sensor_data, "tempf")), JSON_NUMERIC_CHECK);
+$humidity       = json_encode(array_reverse(array_column($sensor_data, "humidity")), JSON_NUMERIC_CHECK);
+$winddir        = json_encode(array_reverse(array_column($sensor_data, "winddir")), JSON_NUMERIC_CHECK);
+$windspeedmph   = json_encode(array_reverse(array_column($sensor_data, "windspeedmph")), JSON_NUMERIC_CHECK);
+$windgustmph    = json_encode(array_reverse(array_column($sensor_data, "windgustmph")), JSON_NUMERIC_CHECK);
+$rainratein     = json_encode(array_reverse(array_column($sensor_data, "rainratein")), JSON_NUMERIC_CHECK);
+$eventrainin    = json_encode(array_reverse(array_column($sensor_data, "eventrainin")), JSON_NUMERIC_CHECK);
+$dailyrainin    = json_encode(array_reverse(array_column($sensor_data, "dailyrainin")), JSON_NUMERIC_CHECK);
+$weeklyrainin   = json_encode(array_reverse(array_column($sensor_data, "weeklyrainin")), JSON_NUMERIC_CHECK);
+$monthlyrainin  = json_encode(array_reverse(array_column($sensor_data, "monthlyrainin")), JSON_NUMERIC_CHECK);
+$yearlyrainin   = json_encode(array_reverse(array_column($sensor_data, "yearlyrainin")), JSON_NUMERIC_CHECK);
+$totalrainin    = json_encode(array_reverse(array_column($sensor_data, "totalrainin")), JSON_NUMERIC_CHECK);
+$solarradiation = json_encode(array_reverse(array_column($sensor_data, "solarradiation")), JSON_NUMERIC_CHECK);
+$uv				= json_encode(array_reverse(array_column($sensor_data, "uv")), JSON_NUMERIC_CHECK);
 
-$sql = "SELECT readingTime FROM SensorData WHERE id = (SELECT MAX(id) FROM SensorData);";
-$image_path = 'Images/'.$conn->query($sql)->fetch_object()->readingTime.'.jpg';
-	
 $result->free();
 $conn->close();
 ?>
 
 <!DOCTYPE html>
 <html>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Wengert Weather</title>
+
 	<script src="https://code.highcharts.com/highcharts.js"></script>
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+	<script src="https://code.highcharts.com/modules/exporting.js"></script>
+	<script src="https://code.highcharts.com/modules/export-data.js"></script>
+	<script src="https://code.highcharts.com/modules/accessibility.js"></script>
+
 	<style>
-	body {
-		min-width: 310px;
-		max-width: 1280px;
-		height: 500px;
-		margin: 0 auto;
-	}
-	h2 {
-		font-family: Arial;
-		font-size: 2.5rem;
-		text-align: center;
-	}
-	h3 {
-		font-family: Arial;
-		font-size: 1.7rem;
-	}
-	#image-title {
-		text-align: center;
-	}
-	#image {
-		width: 70%;
-		border-width: medium;
-		border-color: black;
-		border-style: solid;
-		margin: 15%;
-		margin-top: 10px;
-	}	
-	.slider-container {
-		margin-top: 50px;
-		margin-bottom: 100px;
-	}
-	.slider {
-		-webkit-appearance: none;
-		width: 100%;
-		height: 15px;
-		border-radius: 5px;  
-		background: #d3d3d3;
-		outline: none;
-		opacity: 0.7;
-		-webkit-transition: .2s;
-		transition: opacity .2s;
-	}
-	.slider::-webkit-slider-thumb {
-		-webkit-appearance: none;
-		appearance: none;
-		width: 25px;
-		height: 25px;
-		border-radius: 50%; 
-		background: #4CAF50;
-		cursor: pointer;
-	}
-	.slider::-moz-range-thumb {
-		width: 25px;
-		height: 25px;
-		border-radius: 50%;
-		background: #4CAF50;
-		cursor: pointer;
-	}
+		body {
+			min-width: 310px;
+			max-width: 1280px;
+			margin: 0 auto;
+		}
+
+		h2 {
+			font-family: Arial;
+			font-size: 2.5rem;
+			text-align: center;
+		}
+
+		h3 {
+			font-family: Arial;
+			font-size: 1.7rem;
+		}
+
+		#image-container {
+			width: 70%;
+			margin: 0 auto;
+		}
+
+		#image-title {
+			margin-top: 10px;
+			text-align: center;
+		}
+
+		#image {
+			border-width: medium;
+			border-color: black;
+			border-style: solid;
+			width: 100%;
+		}
 	</style>
-	<body>
-		<h2>ESP Weather Station</h2>
-		<div id="chart-temperature" class="container"></div>
-		<div id="chart-humidity" class="container"></div>
-		<div id="chart-ground-humidity" class="container"></div>
-		<div id="chart-pressure" class="container"></div>
-		<div id="chart-timeToWater" class="container"></div>
-		<div class="slider-container">
-			<h3 id="TTW-header"/>
-			<h3 style="float: left;  margin: auto; padding-right: 30px;">0</h3>
-			<input type="range" min="0" max="300" value="0" class="slider" id="myRange" style="float: left; width: 80%; margin: auto;">
-			<h3 style="float: left;  margin: auto; padding-left: 30px;">300</h3>
-		</div>
-		<div id="image-container">
-			<h3 id="image-title"> Wengert Image </h3>
-			<select id="mySelect" > </select>
-			<img id="image" alt="Wengert Image">
-		</div>
+</head>
+
+<body>
+	<h2>Wengert Weather Station</h2>
+	<div id="charts-container">
+	</div>
+
+	<div id="image-container">
+		<h3 id="image-title"> Wengert Image </h3>
+		<select id="mySelect"> </select>
+		<img id="image" alt="Wengert Image">
+	</div>
 	<script>
-	var value1 = <?php echo $value1; ?>;
-	var value2 = <?php echo $value2; ?>;
-	var value3 = <?php echo $value3; ?>;
-	var value4 = <?php echo $value4; ?>;
-	var value5 = <?php echo $value5; ?>;
-	var reading_time = <?php echo $reading_time; ?>;
-	var image_path = "<?php echo $image_path; ?>";
-	
-	var chartT = new Highcharts.Chart({
-	  chart:{ renderTo : 'chart-temperature' },
-	  title: { text: 'Temperature' },
-	  series: [{
-		showInLegend: false,
-		data: value3
-	  }],
-	  plotOptions: {
-		line: { animation: false,
-		  dataLabels: { enabled: true }
-		},
-		series: { color: '#059e8a' }
-	  },
-	  xAxis: { 
-		type: 'datetime',
-		categories: reading_time
-	  },
-	  yAxis: {
-		title: { text: 'Temperature (Celsius)' }
-	  },
-	  credits: { enabled: false }
-	});
+		let dateutc = <?php echo $dateutc; ?>;
+		dateutc = dateutc.map((e) => new Date(e).toLocaleTimeString("de-De", { hour: '2-digit', minute: '2-digit' }))
 
-	var chartH = new Highcharts.Chart({
-	  chart:{ renderTo:'chart-humidity' },
-	  title: { text: 'Humidity' },
-	  series: [{
-		showInLegend: false,
-		data: value1
-	  }],
-	  plotOptions: {
-		line: { animation: false,
-		  dataLabels: { enabled: true }
+		const addChart = (dataValues, title, unit, color) => {
+
+			const elemId = title + "-container";
+
+			document.getElementById("charts-container").innerHTML += '<div id="' + elemId + '"></div>';
+
+			setTimeout(() => Highcharts.chart(elemId, {
+				chart: {
+					type: 'line',
+					zoomType: 'x'
+				},
+				title: {
+					text: title
+				},
+				xAxis: {
+					categories: dateutc
+				},
+				yAxis: {
+					title: {
+						text: title + " (" + unit + ")"
+					}
+				},
+				plotOptions: {
+					line: {
+						dataLabels: {
+							enabled: true
+						},
+						color: color
+					}
+				},
+				series: [{
+					showInLegend: false,
+					data: dataValues
+				}]
+			}), 0);
 		}
-	  },
-	  xAxis: {
-		type: 'datetime',
-		//dateTimeLabelFormats: { second: '%H:%M:%S' },
-		categories: reading_time
-	  },
-	  yAxis: {
-		title: { text: 'Humidity (%)' }
-	  },
-	  credits: { enabled: false }
-	});
 
-	var chartGH = new Highcharts.Chart({
-	  chart:{ renderTo:'chart-ground-humidity' },
-	  title: { text: 'Ground Humidity' },
-	  series: [{
-		showInLegend: false,
-		data: value2
-	  }],
-	  plotOptions: {
-		line: { animation: false,
-		  dataLabels: { enabled: true }
+		const addImageSelect = () => {
+
+			const files = <?php echo json_encode(array_reverse(scandir("Images/"))); ?>;
+
+			const mySelect = document.getElementById("mySelect");
+			for (const f of files) {
+				if (!f.endsWith(".jpg")) continue;
+
+				const option = document.createElement("option");
+				option.text = f;
+				mySelect.add(option);
+			}
+
+			mySelect.onchange = function() {
+				document.getElementById("image").src = "/Images/" + mySelect.value;
+			}
 		}
-	  },
-	  xAxis: {
-		type: 'datetime',
-		//dateTimeLabelFormats: { second: '%H:%M:%S' },
-		categories: reading_time
-	  },
-	  yAxis: {
-		title: { text: 'Ground Humidity (%)' }
-	  },
-	  credits: { enabled: false }
-	});
 
-	var chartP = new Highcharts.Chart({
-	  chart:{ renderTo:'chart-pressure' },
-	  title: { text: 'Pressure' },
-	  series: [{
-		showInLegend: false,
-		data: value4
-	  }],
-	  plotOptions: {
-		line: { animation: false,
-		  dataLabels: { enabled: true }
-		},
-		series: { color: '#18009c' }
-	  },
-	  xAxis: {
-		type: 'datetime',
-		categories: reading_time
-	  },
-	  yAxis: {
-		title: { text: 'Pressure (hPa)' }
-	  },
-	  credits: { enabled: false }
-	});
+		addChart(<?php echo $baromrelin; ?>, 'Baromrelin', '.', '#059e8a')
 
-	var createTTW = function() {
-		return new Highcharts.Chart({
-			chart:{ renderTo:'chart-timeToWater' },
-			title: { text: 'Time To Water' },
-			series: [{
-			showInLegend: false,
-			data: value5
-			}],
-			plotOptions: {
-			line: { animation: false,
-			  dataLabels: { enabled: true }
-			},
-			series: { color: ' #4CAF50' }
-			},
-			xAxis: {
-			type: 'datetime',
-			categories: reading_time
-			},
-			yAxis: {
-			title: { text: 'Time To Water (min)' }
-			},
-			credits: { enabled: false }
-		});
-	}
+		addChart(<?php echo $baromabsin; ?>, 'Baromabsin', '.', '#059e8a')
 
-	var chartTTW = createTTW();
-	
-	var slider = document.getElementById("myRange");
-	var get = new XMLHttpRequest();
-	get.open('GET', 'get-data.php', true);
-	get.onload = function() {
-		slider.value = parseInt(get.response, 10);
-		slider.oninput();
-	};
-	get.send();
-	slider.oninput = function() {
-		document.getElementById("TTW-header").innerText = "Time to Water: " + slider.value + "min";
-	}
-	slider.onchange = function() {
-		var post = new XMLHttpRequest();
-		post.open('POST', 'post-TTW.php', true);
-		post.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-		post.send('api_key=tPmAT5Ab3j7F9&timeToWater=' + slider.value);
-		value4[value4.length - 1] = parseInt(slider.value, 10);
-		chartTTW = createTTW();
-	}
-	
-	document.getElementById("image").src = "/<?php echo $image_path; ?>";
-	
-	var files = <?php echo json_encode(array_reverse(scandir("Images/"))); ?>;
-	
-	var mySelect = document.getElementById("mySelect");
-	for (const f of files) {
-		if (!f.endsWith(".jpg")) continue;
-		
-		var option = document.createElement("option");
-		option.text = f;
-		mySelect.add(option);
-	}
+		addChart(<?php echo $tempf; ?>, 'Tempf', '.', '#059e8a')
 
-	mySelect.onchange = function() {
-		document.getElementById("image").src = "Images/" + mySelect.value;
-	}
-	
+		addChart(<?php echo $humidity; ?>, 'Humidity', '.', '#059e8a')
+
+		addChart(<?php echo $winddir; ?>, 'Winddir', '.', '#059e8a')
+
+		addChart(<?php echo $windspeedmph; ?>, 'Windspeedmph', '.', '#059e8a')
+
+		addChart(<?php echo $windgustmph; ?>, 'Windgustmph', '.', '#059e8a')
+
+		addChart(<?php echo $rainratein; ?>, 'Rainratein', '.', '#059e8a')
+
+		addChart(<?php echo $eventrainin; ?>, 'Eventrainin', '.', '#059e8a')
+
+		addChart(<?php echo $dailyrainin; ?>, 'Dailyrainin', '.', '#059e8a')
+
+		addChart(<?php echo $weeklyrainin; ?>, 'Weeklyrainin', '.', '#059e8a')
+
+		addChart(<?php echo $monthlyrainin; ?>, 'Monthlyrainin', '.', '#059e8a')
+
+		addChart(<?php echo $yearlyrainin; ?>, 'Yearlyrainin', '.', '#059e8a')
+
+		addChart(<?php echo $totalrainin; ?>, 'Totalrainin', '.', '#059e8a')
+
+		addChart(<?php echo $solarradiation; ?>, 'Solarradiation', '.', '#059e8a')
+
+		addChart(<?php echo $uv; ?>, 'UV', '.', '#059e8a')
+
+		addImageSelect()
+		// TODO possibly via set selected
+		document.getElementById("image").src = "<?php echo $image_path; ?>";
 	</script>
 </body>
+
 </html>
