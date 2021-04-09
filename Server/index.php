@@ -156,8 +156,6 @@ $conn->close();
 
 			const mySelect = document.getElementById("mySelect");
 			for (const f of files) {
-				if (!f.endsWith(".jpg")) continue;
-
 				const option = document.createElement("option");
 				option.text = f;
 				mySelect.add(option);
