@@ -10,5 +10,5 @@ Data and Images get saved every 10min and relayed over a mobile router to a serv
 
 ## Future
 
- - [ ] cleanup Arducam implementation
- - [ ] secure connection to not allow any random requests
+ - [ ] cleanup Arducam implementation [ref here](https://randomnerdtutorials.com/esp32-cam-post-image-photo-server/)
+ - [ ] secure connection to not allow any random requests (API Key?)
