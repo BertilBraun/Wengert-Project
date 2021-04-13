@@ -11,7 +11,8 @@ if ($conn->connect_error) {
 	die("Connection failed: " . $conn->connect_error);
 }
 
-$sql = "SELECT baromrelin, baromabsin, tempf, humidity, winddir, windspeedmph, windgustmph, rainratein, eventrainin, dailyrainin, weeklyrainin, monthlyrainin, yearlyrainin, totalrainin, solarradiation, uv, dateutc, id FROM `Weather Data` order by id desc limit 40";
+// $sql = "SELECT baromrelin, baromabsin, tempf, humidity, winddir, windspeedmph, windgustmph, rainratein, eventrainin, dailyrainin, weeklyrainin, monthlyrainin, yearlyrainin, totalrainin, solarradiation, uv, dateutc, id FROM `Weather Data` order by id desc limit 300";
+$sql = "SELECT baromrelin, baromabsin, tempf, humidity, winddir, windspeedmph, windgustmph, rainratein, eventrainin, dailyrainin, weeklyrainin, solarradiation, uv, dateutc, id FROM `Weather Data` order by id desc limit 300";
 
 $result = $conn->query($sql);
 
@@ -32,9 +33,9 @@ $rainratein     = json_encode(array_reverse(array_column($sensor_data, "rainrate
 $eventrainin    = json_encode(array_reverse(array_column($sensor_data, "eventrainin")), JSON_NUMERIC_CHECK);
 $dailyrainin    = json_encode(array_reverse(array_column($sensor_data, "dailyrainin")), JSON_NUMERIC_CHECK);
 $weeklyrainin   = json_encode(array_reverse(array_column($sensor_data, "weeklyrainin")), JSON_NUMERIC_CHECK);
-$monthlyrainin  = json_encode(array_reverse(array_column($sensor_data, "monthlyrainin")), JSON_NUMERIC_CHECK);
-$yearlyrainin   = json_encode(array_reverse(array_column($sensor_data, "yearlyrainin")), JSON_NUMERIC_CHECK);
-$totalrainin    = json_encode(array_reverse(array_column($sensor_data, "totalrainin")), JSON_NUMERIC_CHECK);
+// $monthlyrainin  = json_encode(array_reverse(array_column($sensor_data, "monthlyrainin")), JSON_NUMERIC_CHECK);
+// $yearlyrainin   = json_encode(array_reverse(array_column($sensor_data, "yearlyrainin")), JSON_NUMERIC_CHECK);
+// $totalrainin    = json_encode(array_reverse(array_column($sensor_data, "totalrainin")), JSON_NUMERIC_CHECK);
 $solarradiation = json_encode(array_reverse(array_column($sensor_data, "solarradiation")), JSON_NUMERIC_CHECK);
 $uv				= json_encode(array_reverse(array_column($sensor_data, "uv")), JSON_NUMERIC_CHECK);
 
@@ -150,9 +151,48 @@ $conn->close();
 			}), 0);
 		}
 
+		addChart(<?php echo $tempf; ?>.map(x => (x - 32) / 1.8).map(x => Math.round(x * 10) / 10), 'Temp', '°C', '#059e8a')
+
+		addChart(<?php echo $humidity; ?>, 'Humidity', '%', '#059e8a')
+
+		addChart(<?php echo $winddir; ?>, 'Wind direction', 'deg', '#059e8a')
+
+		addChart(<?php echo $windspeedmph; ?>.map(x => x * 1.609).map(x => Math.round(x * 10) / 10), 'Windspeed', 'km/h', '#059e8a')
+
+		addChart(<?php echo $windgustmph; ?>.map(x => x * 1.609).map(x => Math.round(x * 10) / 10), 'Windgust', 'km/h', '#059e8a')
+
+		addChart(<?php echo $baromrelin; ?>, 'Baromrelin', 'hPa', '#059e8a')
+
+		addChart(<?php echo $baromabsin; ?>, 'Baromabsin', 'hPa', '#059e8a')
+
+		addChart(<?php echo $solarradiation; ?>, 'Solarradiation', '.', '#059e8a')
+
+		addChart(<?php echo $uv; ?>, 'UV', 'lux', '#059e8a')
+
+		addChart(<?php echo $rainratein; ?>, 'Rainratein', 'mm', '#059e8a')
+
+		addChart(<?php echo $eventrainin; ?>, 'Eventrainin', 'mm', '#059e8a')
+
+		addChart(<?php echo $dailyrainin; ?>, 'Dailyrainin', 'mm', '#059e8a')
+
+		addChart(<?php echo $weeklyrainin; ?>, 'Weeklyrainin', 'mm', '#059e8a')
+
+		// addChart(<?php // echo $monthlyrainin; 
+					?>, 'Monthlyrainin', 'mm', '#059e8a')
+
+		// addChart(<?php // echo $yearlyrainin; 
+					?>, 'Yearlyrainin', 'mm', '#059e8a')
+
+		// addChart(<?php // echo $totalrainin; 
+					?>, 'Totalrainin', 'mm', '#059e8a')
+
 		const addImageSelect = () => {
 
-			const files = <?php echo json_encode(array_reverse(scandir("Images/"))); ?>.filter((e) => e.endsWith(".jpg"));
+			const files = <?php
+							$arr = array_reverse(scandir("Images/"));
+							$arr = array_slice($arr, 0, min(100, count($arr)));
+							echo json_encode($arr);
+							?>.filter((e) => e.endsWith(".jpg"));
 
 			const mySelect = document.getElementById("mySelect");
 			for (const f of files) {
@@ -167,38 +207,6 @@ $conn->close();
 
 			document.getElementById("image").src = "/Images/" + files[files.length - 1];
 		}
-
-		addChart(<?php echo $baromrelin; ?>, 'Baromrelin', '.', '#059e8a')
-
-		addChart(<?php echo $baromabsin; ?>, 'Baromabsin', '.', '#059e8a')
-
-		addChart(<?php echo $tempf; ?>, 'Tempf', '.', '#059e8a')
-
-		addChart(<?php echo $humidity; ?>, 'Humidity', '.', '#059e8a')
-
-		addChart(<?php echo $winddir; ?>, 'Winddir', '.', '#059e8a')
-
-		addChart(<?php echo $windspeedmph; ?>, 'Windspeedmph', '.', '#059e8a')
-
-		addChart(<?php echo $windgustmph; ?>, 'Windgustmph', '.', '#059e8a')
-
-		addChart(<?php echo $rainratein; ?>, 'Rainratein', '.', '#059e8a')
-
-		addChart(<?php echo $eventrainin; ?>, 'Eventrainin', '.', '#059e8a')
-
-		addChart(<?php echo $dailyrainin; ?>, 'Dailyrainin', '.', '#059e8a')
-
-		addChart(<?php echo $weeklyrainin; ?>, 'Weeklyrainin', '.', '#059e8a')
-
-		addChart(<?php echo $monthlyrainin; ?>, 'Monthlyrainin', '.', '#059e8a')
-
-		addChart(<?php echo $yearlyrainin; ?>, 'Yearlyrainin', '.', '#059e8a')
-
-		addChart(<?php echo $totalrainin; ?>, 'Totalrainin', '.', '#059e8a')
-
-		addChart(<?php echo $solarradiation; ?>, 'Solarradiation', '.', '#059e8a')
-
-		addChart(<?php echo $uv; ?>, 'UV', '.', '#059e8a')
 
 		addImageSelect()
 	</script>

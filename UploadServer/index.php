@@ -18,8 +18,9 @@ function err($msg) {
     die($msg);
 }
 
+$size = (int) $_SERVER['CONTENT_LENGTH'];
 // log_to_file(print_r($_POST, true), "data.txt");
-log_to_file("New Entry: " . $_POST["dateutc"], "log.txt");
+log_to_file("New Entry: " . $_POST["dateutc"] . " size: " . $size, "log.txt");
 
 $pass_key_value = "58B6E6B64C7A088FA18CAB6A84668F9E";
 
