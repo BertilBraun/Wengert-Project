@@ -12,7 +12,7 @@ if ($conn->connect_error) {
 }
 
 // $sql = "SELECT baromrelin, baromabsin, tempf, humidity, winddir, windspeedmph, windgustmph, rainratein, eventrainin, dailyrainin, weeklyrainin, monthlyrainin, yearlyrainin, totalrainin, solarradiation, uv, dateutc, id FROM `Weather Data` order by id desc limit 300";
-$sql = "SELECT baromrelin, baromabsin, tempf, humidity, winddir, windspeedmph, windgustmph, rainratein, eventrainin, dailyrainin, weeklyrainin, solarradiation, uv, dateutc, id FROM `Weather Data` order by id desc limit 300";
+$sql = "SELECT baromrelin, tempf, humidity, winddir, windspeedmph, windgustmph, rainratein, eventrainin, dailyrainin, weeklyrainin, solarradiation, uv, dateutc, id FROM `Weather Data` order by id desc limit 300";
 
 $result = $conn->query($sql);
 
@@ -23,7 +23,7 @@ $image_path 	= "/Images/" . max(array_reverse(array_column($sensor_data, "id")))
 
 $dateutc		= json_encode(array_reverse(array_column($sensor_data, "dateutc")), JSON_NUMERIC_CHECK);
 $baromrelin     = json_encode(array_reverse(array_column($sensor_data, "baromrelin")), JSON_NUMERIC_CHECK);
-$baromabsin     = json_encode(array_reverse(array_column($sensor_data, "baromabsin")), JSON_NUMERIC_CHECK);
+// $baromabsin     = json_encode(array_reverse(array_column($sensor_data, "baromabsin")), JSON_NUMERIC_CHECK);
 $tempf     		= json_encode(array_reverse(array_column($sensor_data, "tempf")), JSON_NUMERIC_CHECK);
 $humidity       = json_encode(array_reverse(array_column($sensor_data, "humidity")), JSON_NUMERIC_CHECK);
 $winddir        = json_encode(array_reverse(array_column($sensor_data, "winddir")), JSON_NUMERIC_CHECK);
@@ -51,6 +51,8 @@ $conn->close();
 	<title>Wengert Weather</title>
 
 	<script src="https://code.highcharts.com/highcharts.js"></script>
+	<script src="https://code.highcharts.com/highcharts-more.js"></script>
+	<script src="https://code.highcharts.com/modules/data.js"></script>
 	<script src="https://code.highcharts.com/modules/exporting.js"></script>
 	<script src="https://code.highcharts.com/modules/export-data.js"></script>
 	<script src="https://code.highcharts.com/modules/accessibility.js"></script>
@@ -97,7 +99,7 @@ $conn->close();
 </head>
 
 <body>
-	<h2>Wengert Weather Station</h2>
+	<h2>Wengert Wetter Station</h2>
 	<div id="charts-container">
 	</div>
 
@@ -106,6 +108,7 @@ $conn->close();
 		<select id="mySelect"> </select>
 		<img id="image" alt="Wengert Image">
 	</div>
+
 	<script>
 		let dateutc = <?php echo $dateutc; ?>;
 		dateutc = dateutc.map((e) => new Date(e).toLocaleTimeString("de-De", {
@@ -113,7 +116,80 @@ $conn->close();
 			minute: '2-digit'
 		}))
 
-		const addChart = (dataValues, title, unit, color) => {
+		const addWindRose = (direction, speed) => {
+
+			const elemId = "wind-rose-container";
+
+			document.getElementById("charts-container").innerHTML += '<div class="chart" id="' + elemId + '"></div>';
+
+			const dir = direction[direction.length - 1]
+			const spp = speed[speed.length - 1]
+
+			const dirs = []
+
+			for (let i = 1; i <= 360; i++)
+				dirs.push(Math.abs(i - dir) <= 1 ? spp : 0)
+
+			const cats = []
+			const labels = ['N', 'NO', 'O', 'SO', 'S', 'SW', 'W', 'NW']
+
+			for (let i = 0; i < 360; i++)
+				cats.push(i % 45 == 0 ? labels[Math.floor(i / 45)] : i.toString() + '&deg;')
+
+			setTimeout(() => Highcharts.chart(elemId, {
+				series: [{
+					type: 'column',
+					pointPlacement: 'between',
+					name: "Windgeschwindigkeit",
+					showInLegend: false,
+					data: dirs,
+					color: '#FF0000',
+				}],
+
+				chart: {
+					polar: true,
+				},
+
+				title: {
+					text: 'Wind'
+				},
+
+				pane: {
+					size: '85%'
+				},
+
+				xAxis: {
+					tickmarkPlacement: 'on',
+					min: 0,
+					max: 360,
+					tickInterval: 45,
+					categories: cats
+				},
+
+				yAxis: {
+					endOnTick: false,
+					labels: {
+						enabled: false,
+					},
+					min: 0,
+					max: spp,
+					gridLineWidth: 0
+				},
+
+				tooltip: {
+					valueSuffix: 'km/h'
+				},
+
+				plotOptions: {
+					column: {
+						pointPadding: 0,
+						groupPadding: 0
+					}
+				},
+			}), 0);
+		}
+
+		const addChart = (dataValues, title, unit, color, minimum = null, maximum = null) => {
 
 			const elemId = title + "-container";
 
@@ -132,8 +208,10 @@ $conn->close();
 				},
 				yAxis: {
 					title: {
-						text: title + " (" + unit + ")"
-					}
+						text: (!unit) ? title : title + " (" + unit + ")"
+					},
+					max: maximum,
+					min: minimum
 				},
 				plotOptions: {
 					line: {
@@ -151,31 +229,34 @@ $conn->close();
 			}), 0);
 		}
 
-		addChart(<?php echo $tempf; ?>.map(x => (x - 32) / 1.8).map(x => Math.round(x * 10) / 10), 'Temp', '°C', '#059e8a')
+		addChart(<?php echo $tempf; ?>.map(x => (x - 32) / 1.8).map(x => Math.round(x * 10) / 10), 'Temperatur', '&deg;C', '#059e8a')
 
-		addChart(<?php echo $humidity; ?>, 'Humidity', '%', '#059e8a')
+		addChart(<?php echo $humidity; ?>, 'Luftfeuchtigkeit', '%', '#059e8a', 0, 100)
 
-		addChart(<?php echo $winddir; ?>, 'Wind direction', 'deg', '#059e8a')
+		addWindRose(<?php echo $winddir; ?>, <?php echo $windspeedmph; ?>.map(x => x * 1.609).map(x => Math.round(x * 10) / 10))
 
-		addChart(<?php echo $windspeedmph; ?>.map(x => x * 1.609).map(x => Math.round(x * 10) / 10), 'Windspeed', 'km/h', '#059e8a')
+		addChart(<?php echo $winddir; ?>, 'Windrichtung', 'Grad', '#059e8a', 0, 360)
 
-		addChart(<?php echo $windgustmph; ?>.map(x => x * 1.609).map(x => Math.round(x * 10) / 10), 'Windgust', 'km/h', '#059e8a')
+		addChart(<?php echo $windspeedmph; ?>.map(x => x * 1.609).map(x => Math.round(x * 10) / 10), 'Windgeschwindigkeit', 'km/h', '#059e8a')
 
-		addChart(<?php echo $baromrelin; ?>, 'Baromrelin', 'hPa', '#059e8a')
+		addChart(<?php echo $windgustmph; ?>.map(x => x * 1.609).map(x => Math.round(x * 10) / 10), 'Windboen', 'km/h', '#059e8a')
 
-		addChart(<?php echo $baromabsin; ?>, 'Baromabsin', 'hPa', '#059e8a')
+		addChart(<?php echo $baromrelin; ?>.map(x => x * 33.863).map(x => Math.round(x * 10) / 10), 'Luftdruck', 'hPa', '#059e8a')
 
-		addChart(<?php echo $solarradiation; ?>, 'Solarradiation', '.', '#059e8a')
+		// addChart(<?php //echo $baromabsin; 
+					?>, 'Baromabsin', 'hPa', '#059e8a')
 
-		addChart(<?php echo $uv; ?>, 'UV', 'lux', '#059e8a')
+		addChart(<?php echo $solarradiation; ?>, 'Sonneneinstrahlung', 'W/m&sup2;', '#059e8a')
 
-		addChart(<?php echo $rainratein; ?>, 'Rainratein', 'mm', '#059e8a')
+		addChart(<?php echo $uv; ?>, 'UV index', '', '#059e8a')
 
-		addChart(<?php echo $eventrainin; ?>, 'Eventrainin', 'mm', '#059e8a')
+		addChart(<?php echo $rainratein; ?>.map(x => Math.round(x * 25.4)), 'Niederschlagsmenge', 'mm', '#059e8a', 0)
 
-		addChart(<?php echo $dailyrainin; ?>, 'Dailyrainin', 'mm', '#059e8a')
+		addChart(<?php echo $eventrainin; ?>.map(x => Math.round(x * 25.4)), 'Regenschauer', 'mm', '#059e8a', 0)
 
-		addChart(<?php echo $weeklyrainin; ?>, 'Weeklyrainin', 'mm', '#059e8a')
+		addChart(<?php echo $dailyrainin; ?>.map(x => Math.round(x * 25.4)), 'Tagesregenmenge', 'mm', '#059e8a', 0)
+
+		addChart(<?php echo $weeklyrainin; ?>.map(x => Math.round(x * 25.4)), 'Wochenregenmenge', 'mm', '#059e8a', 0)
 
 		// addChart(<?php // echo $monthlyrainin; 
 					?>, 'Monthlyrainin', 'mm', '#059e8a')
