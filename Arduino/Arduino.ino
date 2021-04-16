@@ -6,7 +6,7 @@
 #include "Camera.h"
 
 const char *ssid = "Wengert Station";
-const char *password = "(L3mb3rg3rLand!))";
+const char *password = "(L3mb3rg3rLand!)";
 
 bool setPowerBoostKeepOn(int en)
 {
