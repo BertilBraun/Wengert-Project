@@ -111,10 +111,24 @@ $conn->close();
 
 	<script>
 		let dateutc = <?php echo $dateutc; ?>;
-		dateutc = dateutc.map((e) => new Date(e).toLocaleTimeString("de-De", {
-			hour: '2-digit',
-			minute: '2-digit'
-		}))
+		dateutc = dateutc.map((e) => {
+			const date = new Date(e);
+
+			if ((date.getHours() == 0 || date.getHours() == 12) && date.getMinutes() < 10) {
+				return date.toLocaleDateString("de-De", {
+					year: '2-digit',
+					month: 'short',
+					day: '2-digit',
+					hour: '2-digit',
+					minute: '2-digit'
+				})
+			} else {
+				return date.toLocaleTimeString("de-De", {
+					hour: '2-digit',
+					minute: '2-digit'
+				})
+			}
+		})
 
 		const addWindRose = (direction, speed) => {
 
