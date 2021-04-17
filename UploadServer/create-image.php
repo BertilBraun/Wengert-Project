@@ -15,7 +15,7 @@ $path = '../Images/'.$conn->query($sql)->fetch_object()->id.'.jpg';
 
 file_put_contents($path, "");
 file_put_contents("next_image_path.txt", $path);
-file_put_contents("log.txt", "Image Upload", FILE_APPEND);
+file_put_contents("log.txt", "Image Upload\n", FILE_APPEND);
 echo "File created";
 	
 $conn->close();

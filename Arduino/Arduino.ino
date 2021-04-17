@@ -1,8 +1,9 @@
-#define TIME_TO_SLEEP (int)(1000000 * 60 * 9.5) /* Time ESP32 will go to sleep (in seconds) Conversion factor for micro seconds to seconds 1000000 => 30 Minutes */
+#define TIME_TO_SLEEP (long)(1000000 * 60 * 59.5) /* Time ESP32 will go to sleep (in seconds) Conversion factor for micro seconds to seconds 1000000 => 30 Minutes */
 
 #include <Wire.h>
 #include <WiFi.h>
 
+#include "HTTP.h"
 #include "Camera.h"
 
 const char *ssid = "Wengert Station";
@@ -41,7 +42,10 @@ void setup()
 
   connectWIFI();
 
-  cameraUpdate();
+  if (get("get-time.php") == "1")
+  {
+    cameraUpdate();
+  }
 
   esp_deep_sleep(TIME_TO_SLEEP);
 }

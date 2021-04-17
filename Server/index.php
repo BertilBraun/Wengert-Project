@@ -300,7 +300,11 @@ $conn->close();
 				document.getElementById("image").src = "/Images/" + mySelect.value;
 			}
 
-			document.getElementById("image").src = "/Images/" + files[files.length - 1];
+			const maxelem = Math.max(...files.map((e) => parseInt(e.replace(".jpg", ""))));
+
+			mySelect.value = maxelem + ".jpg"
+
+			document.getElementById("image").src = "/Images/" + maxelem + ".jpg";
 		}
 
 		addImageSelect()

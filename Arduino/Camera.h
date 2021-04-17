@@ -7,38 +7,13 @@
 #include <cctype>
 #include <iomanip>
 #include <sstream>
-#include <HTTPClient.h>
 
+#include "HTTP.h"
 #include "ArduCAM/ArduCAM.h"
 
 const int CS = 15;
 
 ArduCAM myCAM(OV5642, CS);
-
-bool post(const String &path, const String &data)
-{
-  static const String serverName = "http://weather-station.meinwengert.de/";
-
-  String serverPath = serverName + path;
-
-  // TODO post and return if error occured
-
-  HTTPClient http;
-  http.begin(serverPath.c_str());
-
-  // Send HTTP request
-  int httpResponseCode = http.POST(data);
-  String payload = http.getString();
-
-  Serial.print("HTTP Response code: ");
-  Serial.println(httpResponseCode);
-  Serial.println(payload);
-
-  // Free resources
-  http.end();
-
-  return httpResponseCode > 0;
-}
 
 String url_encode(const std::vector<byte> &value)
 {
@@ -114,7 +89,7 @@ void initCam()
   myCAM.InitCAM();
 
   myCAM.write_reg(ARDUCHIP_TIM, VSYNC_LEVEL_MASK);
-  myCAM.OV5642_set_JPEG_size(OV5640_2048x1536);
+  myCAM.OV5642_set_JPEG_size(OV5642_1024x768);
   delay(1000);
   myCAM.clear_fifo_flag();
   myCAM.write_reg(ARDUCHIP_FRAMES, 0x00);
