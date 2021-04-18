@@ -3,44 +3,17 @@
 #define CameraPowerPin 2
 
 #include <SPI.h>
-#include <vector>
-#include <cctype>
-#include <iomanip>
-#include <sstream>
 
 #include "HTTP.h"
+#include "UDHttp.h"
 #include "ArduCAM/ArduCAM.h"
 
 const int CS = 15;
 
 ArduCAM myCAM(OV5642, CS);
 
-String url_encode(const std::vector<byte> &value)
-{
-  std::ostringstream escaped;
-  escaped.fill('0');
-  escaped << std::hex;
-
-  for (byte c : value)
-  {
-
-    if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~')
-    {
-      escaped << c;
-      continue;
-    }
-
-    escaped << std::uppercase;
-    escaped << '%' << std::setw(2) << int(c);
-    escaped << std::nouppercase;
-  }
-
-  return escaped.str().c_str();
-}
-
 void initCam()
 {
-
   pinMode(CameraPowerPin, OUTPUT);
   pinMode(CS, OUTPUT);
   digitalWrite(CS, HIGH);
@@ -95,7 +68,7 @@ void initCam()
   myCAM.write_reg(ARDUCHIP_FRAMES, 0x00);
 }
 
-std::vector<byte> getImageData()
+uint32_t startCapture()
 {
 
   myCAM.flush_fifo();
@@ -110,74 +83,55 @@ std::vector<byte> getImageData()
   Serial.println(" Done");
 
   uint32_t len = myCAM.read_fifo_length();
-  std::vector<byte> imageData;
 
   if (len >= MAX_FIFO_SIZE || len == 0)
   {
     Serial.println("Invalid Image size: " + len);
-    return imageData;
+    return -1;
   }
 
   myCAM.CS_LOW();
   myCAM.set_fifo_burst();
 
-  unsigned char temp = 0, temp_last = 0;
-  bool is_header = false;
-
-  imageData.reserve(len);
-  while (len--)
-  {
-    temp_last = temp;
-    temp = SPI.transfer(0x00);
-
-    if ((temp == 0xD9) && (temp_last == 0xFF))
-    {
-      imageData.push_back(temp);
-      myCAM.CS_HIGH();
-      is_header = false;
-    }
-    if (is_header == true)
-      imageData.push_back(temp);
-    else if ((temp == 0xD8) && (temp_last == 0xFF))
-    {
-      is_header = true;
-      imageData.push_back(temp_last);
-      imageData.push_back(temp);
-    }
-  }
-
-  return imageData;
+  return len;
 }
 
-void uploadCameraData(const std::vector<byte> &imageData)
+void resposeCB(uint8_t *buffer, int len)
 {
+  Serial.printf("%s\n", buffer);
+}
 
-  size_t copySize = 512;
+void dataCB(Client *client, int len)
+{
+  static const int bufferSize = 4096;
+  static uint8_t buffer[bufferSize] = {0xFF};
 
-  std::vector<byte> data;
-  data.reserve(copySize);
-
-  Serial.print("Sending Image Data ");
-  Serial.println(imageData.size());
-  Serial.println("Performing HTTP POST Image Data request");
-
-  post("create-image.php", "");
-
-  for (int i = 0; i < imageData.size(); i += copySize)
+  while (len)
   {
-    data.clear();
-    data.insert(data.end(), imageData.begin() + i, imageData.begin() + i + min(imageData.size() - i, copySize));
-
-    if (!post("post-image.php?data=" + url_encode(data), ""))
-      break;
+    int copy_size = min(len, bufferSize);
+    SPI.transferBytes(&buffer[0], &buffer[0], copy_size);
+    client->write(&buffer[0], copy_size);
+    len -= copy_size;
+    Serial.print(".");
   }
+
+  myCAM.CS_HIGH();
 }
 
 void cameraUpdate()
 {
   initCam();
-  std::vector<byte> imageData = getImageData();
 
-  if (imageData.size())
-    uploadCameraData(imageData);
+  uint32_t len = startCapture();
+  if (len == -1)
+  {
+    Serial.println("Failed to Capture Camera!");
+    return;
+  }
+
+  Serial.print("Starting Data Stream: " + String(len) + ": ");
+
+  upload("weather-station.meinwengert.de", "/upload-image.php", len, dataCB);
+
+  Serial.println("\nUpload done!");
 }

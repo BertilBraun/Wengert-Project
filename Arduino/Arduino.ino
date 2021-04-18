@@ -1,4 +1,5 @@
-#define TIME_TO_SLEEP (long)(1000000 * 60 * 59.5) /* Time ESP32 will go to sleep (in seconds) Conversion factor for micro seconds to seconds 1000000 => 30 Minutes */
+
+#define TIME_TO_SLEEP (long)(1000000 * 60 * 59.5) /* Time ESP32 will go to sleep (in seconds) Conversion factor for micro seconds to seconds 1000000 => 60 Minutes */
 
 #include <Wire.h>
 #include <WiFi.h>
@@ -6,8 +7,11 @@
 #include "HTTP.h"
 #include "Camera.h"
 
-const char *ssid = "Wengert Station";
-const char *password = "(L3mb3rg3rLand!)";
+// TODO
+// const char *ssid = "Wengert Station";
+// const char *password = "(L3mb3rg3rLand!)";
+const char *ssid = "Oban";
+const char *password = "schnulli01schneufel04";
 
 bool setPowerBoostKeepOn(int en)
 {
