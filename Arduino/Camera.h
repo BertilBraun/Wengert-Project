@@ -96,11 +96,6 @@ uint32_t startCapture()
   return len;
 }
 
-void resposeCB(uint8_t *buffer, int len)
-{
-  Serial.printf("%s\n", buffer);
-}
-
 void dataCB(Client *client, int len)
 {
   static const int bufferSize = 4096;
