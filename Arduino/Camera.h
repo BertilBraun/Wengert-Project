@@ -4,8 +4,9 @@
 
 #include <SPI.h>
 
+#include "HTTP.h"
+#include "UDHttp.h"
 #include "ArduCAM/ArduCAM.h"
-#include <WiFi.h>
 
 const int CS = 15;
 
@@ -95,6 +96,28 @@ uint32_t startCapture()
   return len;
 }
 
+void resposeCB(uint8_t *buffer, int len)
+{
+  Serial.printf("%s\n", buffer);
+}
+
+void dataCB(Client *client, int len)
+{
+  static const int bufferSize = 4096;
+  static uint8_t buffer[bufferSize] = {0xFF};
+
+  while (len)
+  {
+    int copy_size = min(len, bufferSize);
+    SPI.transferBytes(&buffer[0], &buffer[0], copy_size);
+    client->write(&buffer[0], copy_size);
+    len -= copy_size;
+    Serial.print(".");
+  }
+
+  myCAM.CS_HIGH();
+}
+
 void cameraUpdate()
 {
   initCam();
@@ -106,41 +129,9 @@ void cameraUpdate()
     return;
   }
 
-  WiFiClient client;
-  if (!client.connect("weather-station.meinwengert.de", 80))
-  {
-    Serial.println("connection failed");
-    return;
-  }
+  Serial.print("Starting Data Stream: " + String(len) + ": ");
 
-  String header = "POST /upload-image.php HTTP/1.1\r\n";
-  header += "Content-Type: image/jpeg\r\n";
-  header += "Content-Length: " + String(len) + "\r\n";
-  header += "Host: weather-station.meinwengert.de\r\n\r\n";
-
-  Serial.println("connected to the server");
-  client.println(header);
-
-  Serial.print("Starting Data Stream: " + String(len));
-
-  static const size_t bufferSize = 4096;
-  static uint8_t buffer[bufferSize] = {0xFF};
-
-  while (len)
-  {
-    size_t copy_size = min(len, bufferSize);
-    SPI.transferBytes(&buffer[0], &buffer[0], copy_size);
-    if (!client.connected())
-    {
-      Serial.println("disconnected");
-      break;
-    }
-    client.write(&buffer[0], copy_size);
-    len -= copy_size;
-    Serial.print(".");
-  }
-
-  myCAM.CS_HIGH();
+  upload("weather-station.meinwengert.de", "/upload-image.php", len, dataCB);
 
   Serial.println("\nUpload done!");
 }

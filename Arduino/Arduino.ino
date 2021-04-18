@@ -1,5 +1,5 @@
 
-#define TIME_TO_SLEEP (long)(1000000 * 60 * 59.5) /* Time ESP32 will go to sleep (in seconds) Conversion factor for micro seconds to seconds 1000000 => 30 Minutes */
+#define TIME_TO_SLEEP (long)(1000000 * 60 * 59.5) /* Time ESP32 will go to sleep (in seconds) Conversion factor for micro seconds to seconds 1000000 => 60 Minutes */
 
 #include <Wire.h>
 #include <WiFi.h>

@@ -1,7 +1,5 @@
 <?php
 
-file_put_contents("log.txt", "IMAGE!\n", FILE_APPEND);
-
 function log_to_file($msg) {
     $result = $msg . "\n";
     file_put_contents("log.txt", $result, FILE_APPEND);
@@ -22,15 +20,15 @@ $path = '../Images/'.$conn->query($sql)->fetch_object()->id.'.jpg';
 
 $conn->close();
 
-log_to_file("Image Upload " . $path . print_r($_FILES, true));
-log_to_file("Data: " . file_get_contents('php://input'));
-
+log_to_file("Image Upload " . $path);
 	
-if (move_uploaded_file($_FILES['data']['tmp_name'], $path)) {
+$pass_key_value = "58B6E6B64C7A088FA18CAB6A84668F9E";
+
+if (move_uploaded_file($_FILES[$pass_key_value]['tmp_name'], $path)) {
     log_to_file("The file has been uploaded");
     echo "The file has been uploaded";
 } else {
-    log_to_file("There was an error uploading the file, please try again! " . implode(error_get_last()));
+    log_to_file("There was an error uploading the file, please try again! " . error_get_last());
     echo "There was an error uploading the file, please try again!";
 }
 
