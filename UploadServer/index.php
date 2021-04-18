@@ -14,7 +14,7 @@ function log_to_file($msg, $file) {
     file_put_contents($file, $result, FILE_APPEND);
 }
 function err($msg) {
-    log_to_file($msg . " " . print_r(error_get_last()), "error.txt");
+    log_to_file($msg . " " . implode(error_get_last()), "error.txt");
     die($msg);
 }
 

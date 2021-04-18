@@ -10,6 +10,6 @@ Data and Images get saved every 10min and relayed over a mobile router to a serv
 
 ## Future
 
- - [ ] cleanup Arducam implementation [ref here](https://randomnerdtutorials.com/esp32-cam-post-image-photo-server/)
+ - [x] cleanup Arducam implementation [ref here](https://randomnerdtutorials.com/esp32-cam-post-image-photo-server/)
  - [ ] secure connection to not allow any random requests (API Key?)
- - [ ] implement proper names and units on website [ref here](https://github.com/ambient-weather/api-docs/wiki/Device-Data-Specs)
+ - [x] implement proper names and units on website [ref here](https://github.com/ambient-weather/api-docs/wiki/Device-Data-Specs)

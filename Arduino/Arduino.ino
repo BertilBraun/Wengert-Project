@@ -6,8 +6,11 @@
 #include "HTTP.h"
 #include "Camera.h"
 
-const char *ssid = "Wengert Station";
-const char *password = "(L3mb3rg3rLand!)";
+// TODO
+// const char *ssid = "Wengert Station";
+// const char *password = "(L3mb3rg3rLand!)";
+const char *ssid = "Oban";
+const char *password = "schnulli01schneufel04";
 
 bool setPowerBoostKeepOn(int en)
 {
