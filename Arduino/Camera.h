@@ -5,6 +5,7 @@
 #include <SPI.h>
 
 #include "HTTP.h"
+#include "UDHttp.h"
 #include "ArduCAM/ArduCAM.h"
 
 const int CS = 15;
@@ -95,31 +96,19 @@ uint32_t startCapture()
   return len;
 }
 
-bool initRequest(Client *client, uint32_t len)
+void resposeCB(uint8_t *buffer, int len)
 {
-  Serial.println("Starting Request");
-
-  if (!client->connect("weather-station.meinwengert.de", 80))
-  {
-    Serial.println("Connection failed");
-    return false;
-  }
-
-  int requestLength = String(HEADERS).length() + String(HEADERE).length() + String(OPEN).length() + String(CLOSE).length() + len;
-
-  sendChunk(client, HEADERS + String(requestLength) + HEADERE);
-  sendChunk(client, OPEN);
-  return true;
+  Serial.printf("%s\n", buffer);
 }
 
-void streamData(Client *client, uint32_t len)
-{
-  Serial.print("Starting Data Stream");
+unsigned int data_len_to_read = 0;
 
+void dataCB(Client *client)
+{
   unsigned char temp = 0, temp_last = 0;
   bool is_header = false;
 
-  while (len--)
+  while (data_len_to_read--)
   {
     temp_last = temp;
     temp = SPI.transfer(0x00);
@@ -140,21 +129,6 @@ void streamData(Client *client, uint32_t len)
       client->write(temp_last);
       client->write(temp);
     }
-    if (len % 1000 == 0)
-    {
-      Serial.print(".");
-    }
-  }
-  Serial.println("\nUpload done!");
-}
-
-void closeRequest(Client *client)
-{
-  sendChunk(client, CLOSE);
-
-  while (client->available() > 0)
-  {
-    Serial.println((char) client->read());
   }
 }
 
@@ -169,11 +143,10 @@ void cameraUpdate()
     return;
   }
 
-  WiFiClient client;
-  if (!initRequest(&client, len))
-    return;
+  Serial.print("Starting Data Stream: " + String(len));
 
-  streamData(&client, len);
+  data_len_to_read = len;
+  upload("http://weather-station.meinwengert.de/upload-image.php", "image.jpg", len, dataCB, resposeCB);
 
-  closeRequest(&client);
+  Serial.println("\nUpload done!");
 }

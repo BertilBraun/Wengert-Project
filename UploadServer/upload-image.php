@@ -22,8 +22,7 @@ $path = '../Images/'.$conn->query($sql)->fetch_object()->id.'.jpg';
 
 $conn->close();
 
-log_to_file("Image Upload " . $path);
-log_to_file(print_r($_POST, true) . implode($_POST) . print_r($_FILES, true) . implode($_FILES) . print_r($_REQUEST, true) . implode($_REQUEST) . " " . implode(error_get_last()));
+log_to_file("Image Upload " . $path . print_r($_FILES, true));
 	
 if (move_uploaded_file($_FILES['data']['tmp_name'], $path)) {
     log_to_file("The file has been uploaded");
