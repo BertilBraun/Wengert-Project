@@ -1,132 +1,95 @@
 #pragma once
 
-#define CameraPowerPin 2
-
-#include <SPI.h>
-
-#include "HTTP.h"
 #include "UDHttp.h"
-#include "ArduCAM/ArduCAM.h"
+#include "esp_camera.h"
 
-const int CS = 15;
+// Pin definition for CAMERA_MODEL_AI_THINKER
+#define PWDN_GPIO_NUM 32
+#define RESET_GPIO_NUM -1
+#define XCLK_GPIO_NUM 0
+#define SIOD_GPIO_NUM 26
+#define SIOC_GPIO_NUM 27
 
-ArduCAM myCAM(OV5642, CS);
+#define Y9_GPIO_NUM 35
+#define Y8_GPIO_NUM 34
+#define Y7_GPIO_NUM 39
+#define Y6_GPIO_NUM 36
+#define Y5_GPIO_NUM 21
+#define Y4_GPIO_NUM 19
+#define Y3_GPIO_NUM 18
+#define Y2_GPIO_NUM 5
+#define VSYNC_GPIO_NUM 25
+#define HREF_GPIO_NUM 23
+#define PCLK_GPIO_NUM 22
+
+camera_fb_t *fb = NULL;
 
 void initCam()
 {
-  pinMode(CameraPowerPin, OUTPUT);
-  pinMode(CS, OUTPUT);
-  digitalWrite(CS, HIGH);
+  camera_config_t config;
+  config.ledc_channel = LEDC_CHANNEL_0;
+  config.ledc_timer = LEDC_TIMER_0;
+  config.pin_d0 = Y2_GPIO_NUM;
+  config.pin_d1 = Y3_GPIO_NUM;
+  config.pin_d2 = Y4_GPIO_NUM;
+  config.pin_d3 = Y5_GPIO_NUM;
+  config.pin_d4 = Y6_GPIO_NUM;
+  config.pin_d5 = Y7_GPIO_NUM;
+  config.pin_d6 = Y8_GPIO_NUM;
+  config.pin_d7 = Y9_GPIO_NUM;
+  config.pin_xclk = XCLK_GPIO_NUM;
+  config.pin_pclk = PCLK_GPIO_NUM;
+  config.pin_vsync = VSYNC_GPIO_NUM;
+  config.pin_href = HREF_GPIO_NUM;
+  config.pin_sscb_sda = SIOD_GPIO_NUM;
+  config.pin_sscb_scl = SIOC_GPIO_NUM;
+  config.pin_pwdn = PWDN_GPIO_NUM;
+  config.pin_reset = RESET_GPIO_NUM;
+  config.xclk_freq_hz = 20000000;
+  config.pixel_format = PIXFORMAT_JPEG;
 
-  digitalWrite(CameraPowerPin, HIGH);
-
-  SPI.begin();
-
-  //Reset the CPLD
-  myCAM.write_reg(0x07, 0x80);
-  delay(100);
-  myCAM.write_reg(0x07, 0x00);
-  delay(100);
-
-  while (1)
+  if (psramFound())
   {
-    myCAM.write_reg(ARDUCHIP_TEST1, 0x55);
-    uint8_t temp = myCAM.read_reg(ARDUCHIP_TEST1);
-    if (temp != 0x55)
-    {
-      Serial.println("SPI interface FAIL!");
-      delay(1000);
-    }
-    else
-      break;
+    config.frame_size = FRAMESIZE_UXGA; // FRAMESIZE_ + QVGA|CIF|VGA|SVGA|XGA|SXGA|UXGA
+    config.jpeg_quality = 10;
+    config.fb_count = 2;
   }
-  Serial.println("SPI interface OK");
-
-  while (1)
+  else
   {
-    uint8_t vid, pid;
-    myCAM.wrSensorReg16_8(0xff, 0x01);
-    myCAM.rdSensorReg16_8(OV5642_CHIPID_HIGH, &vid);
-    myCAM.rdSensorReg16_8(OV5642_CHIPID_LOW, &pid);
-    if ((vid != 0x56) || (pid != 0x42))
-    {
-      Serial.println("Can't find OV5642 module!");
-      delay(1000);
-    }
-    else
-      break;
-  }
-  Serial.println("OV5642 detected.");
-
-  myCAM.set_format(JPEG);
-  myCAM.InitCAM();
-
-  myCAM.write_reg(ARDUCHIP_TIM, VSYNC_LEVEL_MASK);
-  myCAM.OV5642_set_JPEG_size(OV5642_1024x768);
-  delay(1000);
-  myCAM.clear_fifo_flag();
-  myCAM.write_reg(ARDUCHIP_FRAMES, 0x00);
-}
-
-uint32_t startCapture()
-{
-
-  myCAM.flush_fifo();
-  myCAM.clear_fifo_flag();
-  myCAM.start_capture();
-
-  Serial.print("CAM Capturing");
-
-  while (!myCAM.get_bit(ARDUCHIP_TRIG, CAP_DONE_MASK))
-    ;
-
-  Serial.println(" Done");
-
-  uint32_t len = myCAM.read_fifo_length();
-
-  if (len >= MAX_FIFO_SIZE || len == 0)
-  {
-    Serial.println("Invalid Image size: " + len);
-    return -1;
+    config.frame_size = FRAMESIZE_SVGA;
+    config.jpeg_quality = 12;
+    config.fb_count = 1;
   }
 
-  myCAM.CS_LOW();
-  myCAM.set_fifo_burst();
-
-  return len;
-}
-
-void dataCB(Client *client, int len)
-{
-  static const int bufferSize = 4096;
-  static uint8_t buffer[bufferSize] = {0xFF};
-
-  while (len)
+  // Init Camera
+  esp_err_t err = esp_camera_init(&config);
+  if (err != ESP_OK)
   {
-    int copy_size = min(len, bufferSize);
-    SPI.transferBytes(&buffer[0], &buffer[0], copy_size);
-    client->write(&buffer[0], copy_size);
-    len -= copy_size;
-    Serial.print(".");
+    Serial.printf("Camera init failed with error 0x%x", err);
+    return;
   }
-
-  myCAM.CS_HIGH();
 }
 
 void cameraUpdate()
 {
   initCam();
 
-  uint32_t len = startCapture();
-  if (len == -1)
+  fb = esp_camera_fb_get();
+  if (!fb)
   {
-    Serial.println("Failed to Capture Camera!");
+    Serial.println("Camera capture failed");
     return;
   }
 
-  Serial.print("Starting Data Stream: " + String(len) + ": ");
+  Serial.print("Starting Data Stream: " + String(fb->len) + ": ");
 
-  upload("weather-station.meinwengert.de", "/upload-image.php", len, dataCB);
+  auto start = millis();
 
-  Serial.println("\nUpload done!");
+  upload("weather-station.meinwengert.de", "/upload-image.php", fb->len, [](Client *client) {
+    Serial.print("Data Streaming...");
+    sendChunk(client, (char*) fb->buf, fb->len);
+  });
+
+  esp_camera_fb_return(fb);
+  Serial.println("\nUpload done! Took: " + String(millis() - start) + "ms");
 }

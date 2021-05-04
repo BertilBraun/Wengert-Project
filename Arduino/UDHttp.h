@@ -8,21 +8,19 @@
 
 #define HEADER_SIZE 512
 #define CHUNK_SIZE 128
-#define HOST_LEN 200
 
 //callback that will be invoked whenever data is available
-typedef void (*DataCb)(Client *client, int len);
+typedef void (*DataCb)(Client *client);
 
 #define HEADER "POST %s HTTP/1.1\r\n"       \
-               "Host: %s\r\n"            \
+               "Host: %s\r\n"               \
                "Connection: keep-alive\r\n" \
                "Accept: */*\r\n"            \
                "Content-Length: %d\r\n"     \
-               "Expect: \r\n"               \
                "Content-Type: multipart/form-data; boundary=------------------------wengertImageUpload\r\n\r\n"
 
-#define OPEN "--------------------------wengertImageUpload\r\n"                       \
-             "Content-Disposition: form-data; name='58B6E6B64C7A088FA18CAB6A84668F9E'; filename='image.jpeg'\r\n" \
+#define OPEN "--------------------------wengertImageUpload\r\n"                                                       \
+             "Content-Disposition: form-data; name=\"58B6E6B64C7A088FA18CAB6A84668F9E\"; filename=\"image.jpeg\"\r\n" \
              "Content-Type: application/octet-stream\r\n\r\n"
 
 #define CLOSE "\r\n--------------------------wengertImageUpload--\r\n"
@@ -32,13 +30,36 @@ void sendChunk(Client *client, char *buf, int len)
     int idx = 0;
     while (len > 0)
     {
-        size_t result = client->write((uint8_t *) &buf[idx], min(len, CHUNK_SIZE));
+        size_t result = client->write((uint8_t *)&buf[idx], min(len, CHUNK_SIZE));
         len -= result;
         idx += result;
     }
 }
 
-void upload(const String& host, const String& path, int sizeOfFile, DataCb dataCb)
+void readResponse(Client *client)
+{
+    unsigned long timeout = millis();
+    while (client->available() == 0)
+    {
+        if (millis() - timeout > 5000)
+        {
+            Serial.println(">>> Client Timeout !");
+            client->stop();
+            return;
+        }
+    }
+    
+    Serial.println();
+    Serial.println("Response:");
+    while (client->available())
+    {
+        String line = client->readStringUntil('\r');
+        Serial.print(line);
+    }
+    Serial.println();
+}
+
+void upload(const String &host, const String &path, int sizeOfFile, DataCb dataCb)
 {
     WiFiClient client;
     if (!client.connect(host.c_str(), 80))
@@ -48,7 +69,7 @@ void upload(const String& host, const String& path, int sizeOfFile, DataCb dataC
     }
 
     int contentLen = strlen(OPEN) + strlen(CLOSE) + sizeOfFile;
-    
+
     char buf[HEADER_SIZE];
     snprintf(buf, HEADER_SIZE, HEADER, path.c_str(), host.c_str(), contentLen);
 
@@ -57,7 +78,9 @@ void upload(const String& host, const String& path, int sizeOfFile, DataCb dataC
     sendChunk(&client, OPEN, strlen(OPEN));
 
     //send data
-    dataCb(&client, sizeOfFile);
+    dataCb(&client);
 
     sendChunk(&client, CLOSE, strlen(CLOSE));
+
+    readResponse(&client);
 }
