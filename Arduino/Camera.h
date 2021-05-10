@@ -1,7 +1,10 @@
 #pragma once
 
+#include "Http.h"
 #include "UDHttp.h"
 #include "esp_camera.h"
+
+#include <ArduinoJson.h>
 
 // Pin definition for CAMERA_MODEL_AI_THINKER
 #define PWDN_GPIO_NUM 32
@@ -65,9 +68,48 @@ void initCam()
   esp_err_t err = esp_camera_init(&config);
   if (err != ESP_OK)
   {
-    Serial.printf("Camera init failed with error 0x%x", err);
+    Serial.printf("Camera init failed with error 0x%x \n", err);
     return;
   }
+
+  String json = get("ESP32CAM_config.json");
+  DynamicJsonDocument doc(4096);
+  DeserializationError error = deserializeJson(doc, json.c_str());
+
+  if (error)
+  {
+    Serial.printf("deserializeJson() failed: %s \n", error.c_str());
+    return;
+  }
+
+  sensor_t *s = esp_camera_sensor_get();
+
+  s->set_pixformat(s, PIXFORMAT_JPEG);
+  s->set_framesize(s, (framesize_t)doc["framesize"]);
+  s->set_brightness(s, doc["brightness"]);
+  s->set_contrast(s, doc["contrast"]);
+  s->set_quality(s, doc["quality"]);
+  s->set_sharpness(s, doc["sharpness"]);
+  s->set_saturation(s, doc["saturation"]);
+  s->set_special_effect(s, doc["special_effect"]);
+  s->set_whitebal(s, doc["awb"]);
+  s->set_awb_gain(s, doc["awb_gain"]);
+  s->set_wb_mode(s, doc["wb_mode"]);
+  s->set_exposure_ctrl(s, doc["aec"]);
+  s->set_aec2(s, doc["aec2"]);
+  s->set_ae_level(s, doc["ae_level"]);
+  s->set_aec_value(s, doc["aec_value"]);
+  s->set_gain_ctrl(s, doc["agc"]);
+  s->set_agc_gain(s, doc["agc_gain"]);
+  s->set_gainceiling(s, (gainceiling_t)doc["gainceiling"]);
+  s->set_bpc(s, doc["bpc"]);
+  s->set_wpc(s, doc["wpc"]);
+  s->set_raw_gma(s, doc["raw_gma"]);
+  s->set_lenc(s, doc["lenc"]);
+  s->set_hmirror(s, doc["hmirror"]);
+  s->set_vflip(s, doc["vflip"]);
+  s->set_dcw(s, doc["dcw"]);
+  s->set_colorbar(s, doc["colorbar"]);
 }
 
 void cameraUpdate()
@@ -87,7 +129,7 @@ void cameraUpdate()
 
   upload("weather-station.meinwengert.de", "/upload-image.php", fb->len, [](Client *client) {
     Serial.print("Data Streaming...");
-    sendChunk(client, (char*) fb->buf, fb->len);
+    sendChunk(client, (char *)fb->buf, fb->len);
   });
 
   esp_camera_fb_return(fb);
