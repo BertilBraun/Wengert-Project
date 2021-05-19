@@ -289,6 +289,8 @@ $conn->close();
 							echo json_encode($arr);
 							?>.filter((e) => e.endsWith(".jpg"));
 
+			files.sort();
+
 			const mySelect = document.getElementById("mySelect");
 			for (const f of files) {
 				const option = document.createElement("option");
@@ -300,11 +302,9 @@ $conn->close();
 				document.getElementById("image").src = "/Images/" + mySelect.value;
 			}
 
-			const maxelem = Math.max(...files.map((e) => parseInt(e.replace(".jpg", ""))));
+			mySelect.value = files[0] + ".jpg"
 
-			mySelect.value = maxelem + ".jpg"
-
-			document.getElementById("image").src = "/Images/" + maxelem + ".jpg";
+			document.getElementById("image").src = "/Images/" + files[0] + ".jpg";
 		}
 
 		addImageSelect()
