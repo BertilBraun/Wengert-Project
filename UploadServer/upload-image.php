@@ -16,7 +16,7 @@ $ERROR_CODES = array(
     6 => "Missing a temporary folder"
 );
 
-$path = date("Y_m_d H_i") . '.jpg';
+$path = '../Images/' . date("Y_m_d H_i") . '.jpg';
 
 log_to_file("Image Upload " . $path);
 
