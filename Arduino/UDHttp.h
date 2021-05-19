@@ -5,6 +5,7 @@
 #pragma once
 
 #include <WiFi.h>
+#include <string>
 
 #define HEADER_SIZE 512
 #define CHUNK_SIZE 128
@@ -51,12 +52,13 @@ void readResponse(Client *client)
     
     Serial.println();
     Serial.println("Response:");
+
+    std::string response = "";
     while (client->available())
-    {
-        String line = client->readStringUntil('\r');
-        Serial.print(line);
-    }
-    Serial.println();
+        response += client->read();
+
+    std::string body = response.substr(response.find("\r\n\r\n"));
+    Serial.println(body.c_str());
 }
 
 void upload(const String &host, const String &path, int sizeOfFile, DataCb dataCb)
