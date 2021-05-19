@@ -290,6 +290,7 @@ $conn->close();
 							?>.filter((e) => e.endsWith(".jpg"));
 
 			files.sort();
+			files.reverse();
 
 			const mySelect = document.getElementById("mySelect");
 			for (const f of files) {
