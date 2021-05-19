@@ -302,9 +302,9 @@ $conn->close();
 				document.getElementById("image").src = "/Images/" + mySelect.value;
 			}
 
-			mySelect.value = files[0] + ".jpg"
+			mySelect.value = files[0]
 
-			document.getElementById("image").src = "/Images/" + files[0] + ".jpg";
+			document.getElementById("image").src = "/Images/" + files[0];
 		}
 
 		addImageSelect()
