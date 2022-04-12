@@ -19,8 +19,6 @@ $result = $conn->query($sql);
 while ($data = $result->fetch_assoc())
 	$sensor_data[] = $data;
 
-$image_path 	= "/Images/" . max(array_reverse(array_column($sensor_data, "id"))) . ".jpg";
-
 $dateutc		= json_encode(array_reverse(array_column($sensor_data, "dateutc")), JSON_NUMERIC_CHECK);
 $baromrelin     = json_encode(array_reverse(array_column($sensor_data, "baromrelin")), JSON_NUMERIC_CHECK);
 // $baromabsin     = json_encode(array_reverse(array_column($sensor_data, "baromabsin")), JSON_NUMERIC_CHECK);
@@ -123,9 +121,20 @@ $conn->close();
 		/* Modal Content (Image) */
 		.modal-content {
 			margin: auto;
-			display: block;
 			width: 80%;
 			max-width: 700px;
+
+			/* align child items in a row */
+			display: flex;
+			flex-direction: row;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		/* Modal Image */
+		#img01 {
+			width: 100%;
+			height: auto;
 		}
 
 		/* Caption of Modal Image (Image Text) - Same Width as the Image */
@@ -195,8 +204,18 @@ $conn->close();
 		<!-- The Close Button -->
 		<span class="close">&times;</span>
 
-		<!-- Modal Content (The Image) -->
-		<img class="modal-content" id="img01">
+		<!-- A Div, containing a Button to go left, then the img content, then a Button to go right -->
+		<div class="modal-content">
+			<!-- The Button to go left -->
+			<button id="prev">&#10094;</button>
+
+			<!-- The img content -->
+			<img id="img01" src="">
+
+			<!-- The Button to go right -->
+			<button id="next">&#10095;</button>
+
+		</div>
 
 		<!-- Modal Caption (Image Text) -->
 		<div id="caption"></div>
@@ -384,56 +403,113 @@ $conn->close();
 		// addChart(<?php // echo $totalrainin; 
 					?>, 'Totalrainin', 'mm', '#059e8a')
 
-		const addImageSelect = () => {
+	</script>
+	<script>
 
-			const files = <?php
-							$arr = array_reverse(scandir("Images/"));
-							$arr = array_slice($arr, 0, min(100, count($arr)));
-							echo json_encode($arr);
-							?>.filter((e) => e.endsWith(".jpg"));
+		const basePath = <?php 
+						$basePath = "cam/Wengert-Cam/Snapshot/";
+						echo json_encode($basePath); 
+						?>;
 
-			files.sort();
-			files.reverse();
+		const files = <?php
+						$folders = array_reverse(scandir($basePath)); // TODO remove this reverse if necessary
+						// folders is an array of dates in the form YYYY-MM-DD, get the 10 most recent ones
+						$folders = array_slice($folders, 0, min(10, count($folders)));
 
-			const mySelect = document.getElementById("mySelect");
-			for (const f of files) {
-				const option = document.createElement("option");
-				option.text = f;
-				mySelect.add(option);
-			}
+						$files = [];
+						foreach ($folders as $folder) {
+							// for each folder, get all the files in the subfolder "001"
+							$folderFiles = array_reverse(scandir($basePath . $folder . "/001"));
+							// add the files to the array with the complete path
+							foreach ($folderFiles as $file) {
+								$files[] = $basePath . $folder . "/001/" . $file;
+							}
+						}
 
-			mySelect.onchange = function() {
-				document.getElementById("image").src = "/Images/" + mySelect.value;
-			}
+						echo json_encode($files);
+						?>.filter((e) => e.endsWith(".jpg"));
 
-			mySelect.value = files[0]
+		files.sort();
+		files.reverse();
 
-			// Get the modal
-			var modal = document.getElementById("myModal");
+		// Get the select
+		const mySelect = document.getElementById("mySelect");
+		// Get the modal
+		const modal = document.getElementById("myModal");
 
-			// Get the image and insert it inside the modal - use its "alt" text as a caption
-			var img = document.getElementById("image");
-			var modalImg = document.getElementById("img01");
-			var captionText = document.getElementById("caption");
+		// Get the image and insert it inside the modal - use its "alt" text as a caption
+		const img = document.getElementById("image");
+		const modalImg = document.getElementById("img01");
+		const captionText = document.getElementById("caption");
 
-			img.onclick = function() {
-				modal.style.display = "block";
-				modalImg.src = this.src;
-				captionText.innerHTML = this.alt;
-			}
-			img.src = "/Images/" + files[0];
+		// Get the <span> element that closes the modal
+		const span = document.getElementsByClassName("close")[0];
 
+		const prev = document.getElementById("prev");
+		const next = document.getElementById("next");
 
-			// Get the <span> element that closes the modal
-			var span = document.getElementsByClassName("close")[0];
+		const getImageName = (path) => {
+			// path is of the form "cam/Wengert-Cam/Snapshot/YYYY-MM-DD/001/hh.mm.ss-hh.mm.ss.jpg"
+			// return return "YYYY-MM-DD : hh.mm.ss"
+			const date = path.split("/")[3];
+			const time = path.split("/")[5].split("-")[0];
+			return date + " : " + time;
+		}
 
-			// When the user clicks on <span> (x), close the modal
-			span.onclick = function() {
-				modal.style.display = "none";
+		const setImage = (file) => {
+			img.src = file;
+			img.alt = getImageName(file);
+		}
+	
+		for (const file of files) {
+			const option = document.createElement("option");
+			// set the text to only the filename without extension and path
+			option.text = getImageName(file);
+			option.value = file;
+			mySelect.add(option);
+		}
+
+		mySelect.onchange = () => setImage(mySelect.value)
+		mySelect.value = files[0]
+
+		const updateModal = () => {
+			modal.style.display = "block";
+			modalImg.src = img.src;
+			captionText.innerHTML = img.alt;
+		}
+
+		img.onclick = updateModal
+		setImage(files[0])
+
+		// When the user clicks on <span> (x), close the modal
+		span.onclick = function() {
+			modal.style.display = "none";
+		}
+
+		prev.onclick = () => {
+			const index = files.indexOf(mySelect.value);
+			if (index > 0) {
+				mySelect.value = files[index - 1];
+				setImage(files[index - 1]);
+				updateModal();
 			}
 		}
 
-		addImageSelect()
+		next.onclick = () => {
+			const index = files.indexOf(mySelect.value);
+			if (index < files.length - 1) {
+				mySelect.value = files[index + 1];
+				setImage(files[index + 1]);
+				updateModal();
+			}
+		}
+
+		// When the user clicks anywhere outside of the modal, close it
+		window.onclick = function(event) {
+			if (event.target === modal) {
+				modal.style.display = "none";
+			}
+		}
 	</script>
 </body>
 
