@@ -39,6 +39,23 @@ $uv				= json_encode(array_reverse(array_column($sensor_data, "uv")), JSON_NUMER
 
 $result->free();
 $conn->close();
+
+$basePath = "cam/Wengert-Cam/Snapshot/";
+
+$folders = array_reverse(scandir($basePath));
+// folders is an array of dates in the form YYYY-MM-DD, get the 10 most recent ones
+$folders = array_slice($folders, 0, min(10, count($folders)));
+
+$files = [];
+foreach ($folders as $folder) {
+	// for each folder, get all the files in the subfolder "001"
+	$folderFiles = array_reverse(scandir($basePath . $folder . "/001"));
+	// add the files to the array with the complete path
+	foreach ($folderFiles as $file) {
+		$files[] = $basePath . $folder . "/001/" . $file;
+	}
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -122,7 +139,7 @@ $conn->close();
 		.modal-content {
 			margin: auto;
 			width: 80%;
-			max-width: 700px;
+			max-width: 1000px;
 
 			/* align child items in a row */
 			display: flex;
@@ -220,16 +237,14 @@ $conn->close();
 		<!-- Modal Caption (Image Text) -->
 		<div id="caption"></div>
 	</div>
-
 	<h2>Wengert Wetter Station</h2>
-	<div id="charts-container">
-	</div>
 
 	<div id="image-container">
-		<h3 id="image-title"> Wengert Image </h3>
 		<select id="mySelect"> </select>
 		<img id="image" alt="Wengert Image">
 	</div>
+
+	<div id="charts-container" />
 
 	<script>
 		let dateutc = <?php echo $dateutc; ?>;
@@ -367,7 +382,17 @@ $conn->close();
 
 		addChart(<?php echo $tempf; ?>.map(x => (x - 32) / 1.8).map(x => Math.round(x * 10) / 10), 'Temperatur', '&deg;C', '#059e8a')
 
+		addChart(<?php echo $baromrelin; ?>.map(x => x * 33.863).map(x => Math.round(x * 10) / 10), 'Luftdruck', 'hPa', '#059e8a')
+
 		addChart(<?php echo $humidity; ?>, 'Luftfeuchtigkeit', '%', '#059e8a', 0, 100)
+
+		addChart(<?php echo $rainratein; ?>.map(x => Math.round(x * 25.4)), 'Niederschlagsmenge', 'mm', '#059e8a', 0)
+
+		// addChart(<?php echo $eventrainin; ?>.map(x => Math.round(x * 25.4)), 'Regenschauer', 'mm', '#059e8a', 0)
+
+		addChart(<?php echo $dailyrainin; ?>.map(x => Math.round(x * 25.4)), 'Tagesregenmenge', 'mm', '#059e8a', 0)
+
+		addChart(<?php echo $weeklyrainin; ?>.map(x => Math.round(x * 25.4)), 'Wochenregenmenge', 'mm', '#059e8a', 0)
 
 		addWindRose(<?php echo $winddir; ?>, <?php echo $windspeedmph; ?>.map(x => x * 1.609).map(x => Math.round(x * 10) / 10))
 
@@ -377,8 +402,6 @@ $conn->close();
 
 		addChart(<?php echo $windgustmph; ?>.map(x => x * 1.609).map(x => Math.round(x * 10) / 10), 'Windboen', 'km/h', '#059e8a')
 
-		addChart(<?php echo $baromrelin; ?>.map(x => x * 33.863).map(x => Math.round(x * 10) / 10), 'Luftdruck', 'hPa', '#059e8a')
-
 		// addChart(<?php //echo $baromabsin; 
 					?>, 'Baromabsin', 'hPa', '#059e8a')
 
@@ -386,51 +409,15 @@ $conn->close();
 
 		addChart(<?php echo $uv; ?>, 'UV index', '', '#059e8a')
 
-		addChart(<?php echo $rainratein; ?>.map(x => Math.round(x * 25.4)), 'Niederschlagsmenge', 'mm', '#059e8a', 0)
-
-		addChart(<?php echo $eventrainin; ?>.map(x => Math.round(x * 25.4)), 'Regenschauer', 'mm', '#059e8a', 0)
-
-		addChart(<?php echo $dailyrainin; ?>.map(x => Math.round(x * 25.4)), 'Tagesregenmenge', 'mm', '#059e8a', 0)
-
-		addChart(<?php echo $weeklyrainin; ?>.map(x => Math.round(x * 25.4)), 'Wochenregenmenge', 'mm', '#059e8a', 0)
-
-		// addChart(<?php // echo $monthlyrainin; 
-					?>, 'Monthlyrainin', 'mm', '#059e8a')
-
-		// addChart(<?php // echo $yearlyrainin; 
-					?>, 'Yearlyrainin', 'mm', '#059e8a')
-
-		// addChart(<?php // echo $totalrainin; 
-					?>, 'Totalrainin', 'mm', '#059e8a')
-
 	</script>
 	<script>
 
-		const basePath = <?php 
-						$basePath = "cam/Wengert-Cam/Snapshot/";
-						echo json_encode($basePath); 
-						?>;
+		const basePath = <?php echo json_encode($basePath); ?>;
 
-		const files = <?php
-						$folders = array_reverse(scandir($basePath)); // TODO remove this reverse if necessary
-						// folders is an array of dates in the form YYYY-MM-DD, get the 10 most recent ones
-						$folders = array_slice($folders, 0, min(10, count($folders)));
-
-						$files = [];
-						foreach ($folders as $folder) {
-							// for each folder, get all the files in the subfolder "001"
-							$folderFiles = array_reverse(scandir($basePath . $folder . "/001"));
-							// add the files to the array with the complete path
-							foreach ($folderFiles as $file) {
-								$files[] = $basePath . $folder . "/001/" . $file;
-							}
-						}
-
-						echo json_encode($files);
-						?>.filter((e) => e.endsWith(".jpg"));
-
-		files.sort();
-		files.reverse();
+		const files = <?php echo json_encode($files); ?>
+						.filter((e) => e.endsWith(".jpg"))
+						.sort()
+						.reverse();
 
 		// Get the select
 		const mySelect = document.getElementById("mySelect");
@@ -450,10 +437,14 @@ $conn->close();
 
 		const getImageName = (path) => {
 			// path is of the form "cam/Wengert-Cam/Snapshot/YYYY-MM-DD/001/hh.mm.ss-hh.mm.ss.jpg"
-			// return return "YYYY-MM-DD : hh.mm.ss"
+			// return "YYYY-MM-DD : hh.mm.ss"
 			const date = path.split("/")[3];
-			const time = path.split("/")[5].split("-")[0];
-			return date + " : " + time;
+			const time = path.split("/")[5].split("-")[0].split(".");
+			// modify hh by adding one hour 
+			const hh = parseInt(time[0]) + 1;
+			const modifiedTime = hh.toString().padStart(2, "0") + "." + time[1] + "." + time[2];
+
+			return date + " : " + modifiedTime;
 		}
 
 		const setImage = (file) => {
@@ -469,8 +460,8 @@ $conn->close();
 			mySelect.add(option);
 		}
 
-		mySelect.onchange = () => setImage(mySelect.value)
-		mySelect.value = files[0]
+		mySelect.onchange = () => setImage(mySelect.value);
+		mySelect.value = files[0];
 
 		const updateModal = () => {
 			modal.style.display = "block";
@@ -478,15 +469,13 @@ $conn->close();
 			captionText.innerHTML = img.alt;
 		}
 
-		img.onclick = updateModal
+		img.onclick = () => updateModal();
 		setImage(files[0])
 
 		// When the user clicks on <span> (x), close the modal
-		span.onclick = function() {
-			modal.style.display = "none";
-		}
+		span.onclick = () => modal.style.display = "none";
 
-		prev.onclick = () => {
+		next.onclick = () => {
 			const index = files.indexOf(mySelect.value);
 			if (index > 0) {
 				mySelect.value = files[index - 1];
@@ -495,7 +484,7 @@ $conn->close();
 			}
 		}
 
-		next.onclick = () => {
+		prev.onclick = () => {
 			const index = files.indexOf(mySelect.value);
 			if (index < files.length - 1) {
 				mySelect.value = files[index + 1];
@@ -505,14 +494,11 @@ $conn->close();
 		}
 
 		// When the user clicks anywhere outside of the modal, close it
-		window.onclick = function(event) {
-			if (event.target === modal) {
+		window.onclick = (event) => {
+			if (event.target === modal) 
 				modal.style.display = "none";
-			}
 		}
 	</script>
 </body>
 
 </html>
-
-?>
