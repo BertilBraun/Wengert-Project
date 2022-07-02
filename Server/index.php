@@ -441,7 +441,7 @@ foreach ($folders as $folder) {
 			const date = path.split("/")[3];
 			const time = path.split("/")[5].split("-")[0].split(".");
 			// modify hh by adding one hour 
-			const hh = parseInt(time[0]);
+			const hh = parseInt(time[0]) + 1;
 			const modifiedTime = hh.toString().padStart(2, "0") + "." + time[1] + "." + time[2];
 
 			return date + " : " + modifiedTime;
